@@ -19,6 +19,15 @@ struct ContentView: View {
         (.command, "⌘"),
         (.shift,   "⇧"),
     ]
+    
+    @ViewBuilder
+    func glassEffect() -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular)
+        } else {
+            self
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -32,8 +41,6 @@ struct ContentView: View {
                     .font(.headline)
                 Spacer()
             }
-
-            Divider()
 
             // ── Accessibility status ─────────────────────────────────
             if !windowMover.accessibilityGranted {
@@ -54,8 +61,6 @@ struct ContentView: View {
                         .controlSize(.small)
                     }
                 }
-                
-                Divider()
             }
 
             // ── Hotkey selector ──────────────────────────────────────
@@ -93,8 +98,6 @@ struct ContentView: View {
                 }
             }
 
-            Divider()
-
             // ── Quit ─────────────────────────────────────────────────
             HStack {
                 Spacer()
@@ -105,16 +108,5 @@ struct ContentView: View {
         }
         .padding(16)
         .frame(width: 280)
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func applyIfAvailableGlassEffect() -> some View {
-        if #available(macOS 26.0, *) {
-            self.glassEffect()
-        } else {
-            self
-        }
     }
 }
