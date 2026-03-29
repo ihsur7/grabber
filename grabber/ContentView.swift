@@ -23,7 +23,7 @@ struct ContentView: View {
     @ViewBuilder
     func glassEffect() -> some View {
         if #available(macOS 26.0, *) {
-            self.glassEffect(.regular)
+            self
         } else {
             self
         }
