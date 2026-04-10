@@ -59,39 +59,6 @@ find_archive_app_path() {
   return 1
 }
 
-export_developer_id_app() {
-  local archive_path="$1"
-  local export_dir export_options_plist app_path
-
-  export_dir="$(mktemp -d)/grabber_devid_export"
-  export_options_plist="$(dirname "$0")/ExportOptions.plist"
-
-  if [[ ! -f "$export_options_plist" ]]; then
-    echo "ExportOptions.plist not found at $export_options_plist" >&2
-    return 1
-  fi
-
-  log "Exporting archive for Developer ID distribution from $archive_path ..."
-  if ! xcodebuild -exportArchive \
-      -archivePath "$archive_path" \
-      -exportPath "$export_dir" \
-      -exportOptionsPlist "$export_options_plist" \
-      -allowProvisioningUpdates; then
-    echo "xcodebuild -exportArchive failed" >&2
-    return 1
-  fi
-
-  app_path="$(find "$export_dir" -maxdepth 1 -type d -name '*.app' | head -n 1)"
-  if [[ -n "$app_path" ]]; then
-    log "Developer ID export succeeded: $app_path"
-    printf '%s\n' "$app_path"
-    return 0
-  fi
-
-  echo "No .app found in export directory: $export_dir" >&2
-  return 1
-}
-
 resolve_app_path() {
   local developer_id_path archive_path app_path
 
@@ -103,9 +70,9 @@ resolve_app_path() {
 
   archive_path="${CI_ARCHIVE_PATH:-}"
   if [[ -n "$archive_path" && -d "$archive_path" ]]; then
-    log "CI_DEVELOPER_ID_SIGNED_APP_PATH is unavailable; exporting archive for Developer ID distribution"
-    app_path="$(export_developer_id_app "$archive_path" || true)"
+    app_path="$(find_archive_app_path "$archive_path" || true)"
     if [[ -n "$app_path" ]]; then
+      log "CI_DEVELOPER_ID_SIGNED_APP_PATH is unavailable; using app bundle from CI_ARCHIVE_PATH (will be signed by package_release.sh)"
       printf '%s\n' "$app_path"
       return 0
     fi
@@ -114,25 +81,21 @@ resolve_app_path() {
   return 1
 }
 
-validate_developer_id_signing() {
-  local app_path="$1"
-  local codesign_output authority_line
+find_developer_id_identity() {
+  local identity
 
-  require_command codesign
+  identity="$(security find-identity -v -p codesigning 2>/dev/null \
+    | grep -o '"Developer ID Application: [^"]*"' \
+    | head -n 1 \
+    | tr -d '"' || true)"
 
-  codesign_output="$(codesign -dvv "$app_path" 2>&1 || true)"
-  if grep -Fq 'Authority=Developer ID Application' <<< "$codesign_output"; then
-    log "Verified Developer ID signing on $(basename "$app_path")"
+  if [[ -n "$identity" ]]; then
+    printf '%s\n' "$identity"
     return 0
   fi
 
-  authority_line="$(printf '%s\n' "$codesign_output" | awk -F= '/Authority=/{print $2; exit}')"
-  if [[ -n "$authority_line" ]]; then
-    echo "resolved archive app is signed with '$authority_line', not Developer ID Application; update the Release target signing certificate in Xcode to Developer ID" >&2
-  else
-    echo "resolved archive app is not Developer ID signed; update the Release target signing certificate in Xcode to Developer ID" >&2
-  fi
-  exit 1
+  echo "No Developer ID Application certificate found in keychain" >&2
+  return 1
 }
 
 json_get() {
@@ -388,7 +351,8 @@ main() {
     exit 1
   fi
 
-  validate_developer_id_signing "$app_path"
+  local developer_id_identity
+  developer_id_identity="$(find_developer_id_identity)"
 
   package_script="${CI_PRIMARY_REPOSITORY_PATH}/scripts/package_release.sh"
   if [[ ! -x "$package_script" ]]; then
@@ -402,6 +366,8 @@ main() {
 
   log "Packaging release artifacts for v$version"
   PREBUILT_APP_PATH="$app_path" \
+    SIGN_RELEASE=1 \
+    DEVELOPER_ID_APPLICATION="$developer_id_identity" \
     HOMEBREW_CASK_SOURCE_REPOSITORY="$GITHUB_RELEASE_REPO" \
     "$package_script" "$version" "$output_dir"
 

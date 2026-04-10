@@ -275,7 +275,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber;
 				PRODUCT_NAME = Grabber;
 				REGISTER_APP_GROUPS = YES;
@@ -314,7 +314,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber;
 				PRODUCT_NAME = Grabber;
 				PROVISIONING_PROFILE_SPECIFIER = "";
