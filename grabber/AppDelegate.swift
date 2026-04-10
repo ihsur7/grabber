@@ -4,20 +4,41 @@
 //
 
 import Cocoa
+import Combine
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
+    private var cancellables = Set<AnyCancellable>()
+
+    private let appPreferences = AppPreferencesStore.shared
     let windowMover = WindowMover()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Run as a menubar-only app (no Dock icon, no app switcher entry)
-        NSApp.setActivationPolicy(.accessory)
-
+        observeAppPreferences()
         setupStatusItem()
         setupPopover()
         windowMover.startMonitoring()
+    }
+
+    private func observeAppPreferences() {
+        appPreferences.$showInDock
+            .removeDuplicates()
+            .sink { [weak self] showInDock in
+                self?.applyActivationPolicy(showInDock: showInDock)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func applyActivationPolicy(showInDock: Bool) {
+        let policy: NSApplication.ActivationPolicy = showInDock ? .regular : .accessory
+        guard NSApp.activationPolicy() != policy else { return }
+
+        NSApp.setActivationPolicy(policy)
+        if showInDock {
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     // MARK: - Status bar
@@ -35,10 +56,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 230)
+        popover.contentSize = NSSize(width: 280, height: 260)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
-            rootView: ContentView()
+            rootView: ContentView(closePopover: { [weak self] in
+                self?.popover.performClose(nil)
+            })
                 .environmentObject(windowMover)
         )
     }

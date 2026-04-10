@@ -7,7 +7,7 @@ cask "grabber" do
   desc "Menu bar utility for moving windows by holding a modifier key"
   homepage "https://github.com/ihsur7/grabber"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: ">= :sonoma"
 
   app "grabber.app", target: "Grabber.app"
 
