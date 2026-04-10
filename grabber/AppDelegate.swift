@@ -13,9 +13,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     private let appPreferences = AppPreferencesStore.shared
+    private let applicationIconImage = AppDelegate.loadApplicationIcon()
     let windowMover = WindowMover()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        applyApplicationIcon()
         observeAppPreferences()
         setupStatusItem()
         setupPopover()
@@ -37,8 +39,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.setActivationPolicy(policy)
         if showInDock {
+            applyApplicationIcon()
             NSApp.activate(ignoringOtherApps: true)
         }
+    }
+
+    private func applyApplicationIcon() {
+        NSApp.applicationIconImage = applicationIconImage
+            ?? NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
+    }
+
+    private static func loadApplicationIcon() -> NSImage? {
+        guard let iconFile = Bundle.main.object(forInfoDictionaryKey: "CFBundleIconFile") as? String else {
+            return nil
+        }
+
+        let iconFilePath = iconFile as NSString
+        let resourceName = iconFilePath.deletingPathExtension
+        let resourceExtension = iconFilePath.pathExtension.isEmpty ? "icns" : iconFilePath.pathExtension
+
+        if let iconPath = Bundle.main.path(forResource: resourceName, ofType: resourceExtension),
+           let iconImage = NSImage(contentsOfFile: iconPath) {
+            return iconImage
+        }
+
+        return NSImage(named: NSImage.Name(iconFile))
     }
 
     // MARK: - Status bar
