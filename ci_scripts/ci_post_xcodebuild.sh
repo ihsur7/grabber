@@ -70,9 +70,18 @@ resolve_app_path() {
 
   developer_id_path="${CI_DEVELOPER_ID_SIGNED_APP_PATH:-}"
   if [[ -n "$developer_id_path" && -d "$developer_id_path" ]]; then
-    log "Using CI_DEVELOPER_ID_SIGNED_APP_PATH: $developer_id_path"
-    printf '%s\n' "$developer_id_path"
-    return 0
+    # CI_DEVELOPER_ID_SIGNED_APP_PATH may be the export dir or the .app itself
+    if [[ "$developer_id_path" == *.app ]]; then
+      log "Using CI_DEVELOPER_ID_SIGNED_APP_PATH: $developer_id_path"
+      printf '%s\n' "$developer_id_path"
+      return 0
+    fi
+    app_path="$(find "$developer_id_path" -maxdepth 1 -type d -name '*.app' | head -n 1)"
+    if [[ -n "$app_path" ]]; then
+      log "Using .app from CI_DEVELOPER_ID_SIGNED_APP_PATH: $app_path"
+      printf '%s\n' "$app_path"
+      return 0
+    fi
   fi
 
   archive_path="${CI_ARCHIVE_PATH:-}"
