@@ -59,6 +59,39 @@ find_archive_app_path() {
   return 1
 }
 
+export_developer_id_app() {
+  local archive_path="$1"
+  local export_dir export_options_plist app_path
+
+  export_dir="$(mktemp -d)/grabber_devid_export"
+  export_options_plist="$(dirname "$0")/ExportOptions.plist"
+
+  if [[ ! -f "$export_options_plist" ]]; then
+    echo "ExportOptions.plist not found at $export_options_plist" >&2
+    return 1
+  fi
+
+  log "Exporting archive for Developer ID distribution from $archive_path ..."
+  if ! xcodebuild -exportArchive \
+      -archivePath "$archive_path" \
+      -exportPath "$export_dir" \
+      -exportOptionsPlist "$export_options_plist" \
+      -allowProvisioningUpdates; then
+    echo "xcodebuild -exportArchive failed" >&2
+    return 1
+  fi
+
+  app_path="$(find "$export_dir" -maxdepth 1 -type d -name '*.app' | head -n 1)"
+  if [[ -n "$app_path" ]]; then
+    log "Developer ID export succeeded: $app_path"
+    printf '%s\n' "$app_path"
+    return 0
+  fi
+
+  echo "No .app found in export directory: $export_dir" >&2
+  return 1
+}
+
 resolve_app_path() {
   local developer_id_path archive_path app_path
 
@@ -70,9 +103,9 @@ resolve_app_path() {
 
   archive_path="${CI_ARCHIVE_PATH:-}"
   if [[ -n "$archive_path" && -d "$archive_path" ]]; then
-    app_path="$(find_archive_app_path "$archive_path" || true)"
+    log "CI_DEVELOPER_ID_SIGNED_APP_PATH is unavailable; exporting archive for Developer ID distribution"
+    app_path="$(export_developer_id_app "$archive_path" || true)"
     if [[ -n "$app_path" ]]; then
-      log "CI_DEVELOPER_ID_SIGNED_APP_PATH is unavailable; using app bundle resolved from CI_ARCHIVE_PATH"
       printf '%s\n' "$app_path"
       return 0
     fi
