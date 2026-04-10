@@ -46,6 +46,7 @@ cask_source_repository="${HOMEBREW_CASK_SOURCE_REPOSITORY:-ihsur7/grabber}"
 derived_data_dir="$output_dir/DerivedData"
 build_products_dir="$derived_data_dir/Build/Products/Release"
 app_path="$build_products_dir/Grabber.app"
+app_icon_fallback_file="grabber/Resources/Icon.icns"
 zip_path="$output_dir/grabber-$version.zip"
 checksum_path="$zip_path.sha256"
 sign_release="${SIGN_RELEASE:-0}"
@@ -69,6 +70,29 @@ build_app() {
     CODE_SIGN_IDENTITY="" \
     MARKETING_VERSION="$version" \
     build
+}
+
+ensure_app_icon() {
+  local info_plist icon_file icon_name icon_path
+
+  info_plist="$app_path/Contents/Info.plist"
+  icon_file="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$info_plist" 2>/dev/null || true)"
+  icon_name="${icon_file:-Icon}"
+  icon_name="${icon_name%.icns}"
+  icon_path="$app_path/Contents/Resources/$icon_name.icns"
+
+  if [[ -f "$icon_path" ]]; then
+    log "Found bundled app icon at $icon_path"
+    return
+  fi
+
+  if [[ ! -f "$app_icon_fallback_file" ]]; then
+    echo "expected app icon not found and fallback file is missing: $app_icon_fallback_file" >&2
+    exit 1
+  fi
+
+  log "App icon missing from built app; copying fallback ICNS from $app_icon_fallback_file"
+  cp "$app_icon_fallback_file" "$icon_path"
 }
 
 sign_app() {
@@ -153,6 +177,7 @@ if [[ ! -d "$app_path" ]]; then
   exit 1
 fi
 
+ensure_app_icon
 sign_app
 package_zip
 notarize_zip
