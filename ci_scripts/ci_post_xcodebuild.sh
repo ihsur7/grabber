@@ -361,9 +361,12 @@ main() {
   export HOMEBREW_TAP_REPO="${HOMEBREW_TAP_REPO:-ihsur7/homebrew-grabber}"
 
   log "Packaging release artifacts for v$version"
-  PREBUILT_APP_PATH="$app_path" \
-    HOMEBREW_CASK_SOURCE_REPOSITORY="$GITHUB_RELEASE_REPO" \
-    "$package_script" "$version" "$output_dir"
+  (
+    cd "$CI_PRIMARY_REPOSITORY_PATH"
+    PREBUILT_APP_PATH="$app_path" \
+      HOMEBREW_CASK_SOURCE_REPOSITORY="$GITHUB_RELEASE_REPO" \
+      "$package_script" "$version" "$output_dir"
+  )
 
   publish_github_release "$version" "$output_dir"
   update_homebrew_tap "$version" "$output_dir"
