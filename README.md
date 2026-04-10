@@ -51,14 +51,15 @@ This repository now publishes signed macOS releases from Xcode Cloud. The custom
 
 Configure your Xcode Cloud workflow with:
 
-1. A macOS `Archive` action that exports a `Developer ID` signed app, so `CI_DEVELOPER_ID_SIGNED_APP_PATH` is available to the post-build script.
-2. A tag-based start condition for `v*` if you want tagging to trigger publishing automatically.
-3. Secret environment variable `GITHUB_RELEASE_TOKEN`: GitHub token with `contents:write` access to `ihsur7/grabber`.
-4. Secret environment variable `HOMEBREW_TAP_GITHUB_TOKEN`: GitHub token with `contents:write` access to `ihsur7/homebrew-grabber`.
-5. Optional environment variable `GITHUB_RELEASE_REPO`: defaults to `ihsur7/grabber`.
-6. Optional environment variable `HOMEBREW_TAP_REPO`: defaults to `ihsur7/homebrew-grabber`.
-7. Optional environment variable `PUBLISH_RELEASE=1`: required for manual archive runs that are not started from a tag.
-8. Optional environment variable `RELEASE_VERSION=<version>`: required for manual archive runs that are not started from a `v<version>` tag.
+1. A macOS `Archive` action. Xcode Cloud may expose only `None`, `TestFlight (Internal Testing Only)`, and `App Store Connect` here for macOS.
+2. The app target's `Release` signing configuration set to `Developer ID` in Xcode, so the archive contains a Developer ID signed app that the post-build script can package.
+3. A tag-based start condition for `v*` if you want tagging to trigger publishing automatically.
+4. Secret environment variable `GITHUB_RELEASE_TOKEN`: GitHub token with `contents:write` access to `ihsur7/grabber`.
+5. Secret environment variable `HOMEBREW_TAP_GITHUB_TOKEN`: GitHub token with `contents:write` access to `ihsur7/homebrew-grabber`.
+6. Optional environment variable `GITHUB_RELEASE_REPO`: defaults to `ihsur7/grabber`.
+7. Optional environment variable `HOMEBREW_TAP_REPO`: defaults to `ihsur7/homebrew-grabber`.
+8. Optional environment variable `PUBLISH_RELEASE=1`: required for manual archive runs that are not started from a tag.
+9. Optional environment variable `RELEASE_VERSION=<version>`: required for manual archive runs that are not started from a `v<version>` tag.
 
 For tagged archive builds, the script derives the release version from the tag automatically. For manual archive builds, set both `PUBLISH_RELEASE=1` and `RELEASE_VERSION=<version>` in the workflow environment.
 

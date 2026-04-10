@@ -33,6 +33,75 @@ require_env() {
   fi
 }
 
+find_archive_app_path() {
+  local archive_path="$1"
+  local app_path
+
+  if [[ -d "$archive_path" && "$archive_path" == *.app ]]; then
+    printf '%s\n' "$archive_path"
+    return 0
+  fi
+
+  if [[ -d "$archive_path/Products/Applications" ]]; then
+    app_path="$(find "$archive_path/Products/Applications" -maxdepth 1 -type d -name '*.app' | head -n 1)"
+    if [[ -n "$app_path" ]]; then
+      printf '%s\n' "$app_path"
+      return 0
+    fi
+  fi
+
+  app_path="$(find "$archive_path" -maxdepth 4 -type d -name '*.app' | head -n 1)"
+  if [[ -n "$app_path" ]]; then
+    printf '%s\n' "$app_path"
+    return 0
+  fi
+
+  return 1
+}
+
+resolve_app_path() {
+  local developer_id_path archive_path app_path
+
+  developer_id_path="${CI_DEVELOPER_ID_SIGNED_APP_PATH:-}"
+  if [[ -n "$developer_id_path" && -d "$developer_id_path" ]]; then
+    printf '%s\n' "$developer_id_path"
+    return 0
+  fi
+
+  archive_path="${CI_ARCHIVE_PATH:-}"
+  if [[ -n "$archive_path" && -d "$archive_path" ]]; then
+    app_path="$(find_archive_app_path "$archive_path" || true)"
+    if [[ -n "$app_path" ]]; then
+      log "CI_DEVELOPER_ID_SIGNED_APP_PATH is unavailable; using app bundle resolved from CI_ARCHIVE_PATH"
+      printf '%s\n' "$app_path"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+validate_developer_id_signing() {
+  local app_path="$1"
+  local codesign_output authority_line
+
+  require_command codesign
+
+  codesign_output="$(codesign -dvv "$app_path" 2>&1 || true)"
+  if grep -Fq 'Authority=Developer ID Application' <<< "$codesign_output"; then
+    log "Verified Developer ID signing on $(basename "$app_path")"
+    return 0
+  fi
+
+  authority_line="$(printf '%s\n' "$codesign_output" | awk -F= '/Authority=/{print $2; exit}')"
+  if [[ -n "$authority_line" ]]; then
+    echo "resolved archive app is signed with '$authority_line', not Developer ID Application; update the Release target signing certificate in Xcode to Developer ID" >&2
+  else
+    echo "resolved archive app is not Developer ID signed; update the Release target signing certificate in Xcode to Developer ID" >&2
+  fi
+  exit 1
+}
+
 json_get() {
   local json_file="$1"
   local expression="$2"
@@ -280,11 +349,13 @@ main() {
     exit 1
   fi
 
-  app_path="${CI_DEVELOPER_ID_SIGNED_APP_PATH:-}"
+  app_path="$(resolve_app_path || true)"
   if [[ -z "$app_path" ]]; then
-    echo "CI_DEVELOPER_ID_SIGNED_APP_PATH is not available; configure the Xcode Cloud archive action to export a Developer ID signed macOS app" >&2
+    echo "could not resolve an exported app bundle from CI_DEVELOPER_ID_SIGNED_APP_PATH or CI_ARCHIVE_PATH; confirm the workflow runs a macOS archive action and produces app artifacts" >&2
     exit 1
   fi
+
+  validate_developer_id_signing "$app_path"
 
   package_script="${CI_PRIMARY_REPOSITORY_PATH}/scripts/package_release.sh"
   if [[ ! -x "$package_script" ]]; then
