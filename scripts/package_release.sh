@@ -40,10 +40,12 @@ fi
 
 version="$1"
 output_dir="${2:-build/release}"
-homebrew_cask_file="Casks/grabber.rb"
+homebrew_cask_template_file="homebrew/grabber.rb.template"
+rendered_cask_file="$output_dir/grabber.rb"
+cask_source_repository="${HOMEBREW_CASK_SOURCE_REPOSITORY:-ihsur7/grabber}"
 derived_data_dir="$output_dir/DerivedData"
 build_products_dir="$derived_data_dir/Build/Products/Release"
-app_path="$build_products_dir/grabber.app"
+app_path="$build_products_dir/Grabber.app"
 zip_path="$output_dir/grabber-$version.zip"
 checksum_path="$zip_path.sha256"
 sign_release="${SIGN_RELEASE:-0}"
@@ -130,11 +132,13 @@ update_cask_checksum() {
 
   checksum="$(cut -d' ' -f1 "$checksum_path")"
 
-  if [[ -f "$homebrew_cask_file" ]]; then
-    log "Updating cask checksum"
-    perl -0pi -e "s/^  sha256 \".*\"$/  sha256 \"$checksum\"/m" "$homebrew_cask_file"
+  if [[ -f "$homebrew_cask_template_file" ]]; then
+    log "Rendering Homebrew cask"
+    perl -0pe \
+      "s/REPLACE_WITH_RELEASE_VERSION/$version/g; s/REPLACE_WITH_RELEASE_SHA256/$checksum/g; s|OWNER/REPO|$cask_source_repository|g" \
+      "$homebrew_cask_template_file" > "$rendered_cask_file"
   else
-    echo "warning: $homebrew_cask_file not found, skipping cask checksum update" >&2
+    echo "warning: $homebrew_cask_template_file not found, skipping cask rendering" >&2
   fi
 }
 
@@ -156,3 +160,6 @@ update_cask_checksum
 
 echo "$zip_path"
 echo "$checksum_path"
+if [[ -f "$rendered_cask_file" ]]; then
+  echo "$rendered_cask_file"
+fi

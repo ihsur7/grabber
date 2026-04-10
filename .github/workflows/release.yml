@@ -14,6 +14,9 @@ on:
 permissions:
   contents: write
 
+env:
+  HOMEBREW_TAP_REPO: ihsur7/homebrew-grabber
+
 jobs:
   build:
     runs-on: macos-latest
@@ -21,12 +24,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate signing configuration
+      - name: Validate release configuration
         env:
           BUILD_CERTIFICATE_P12_BASE64: ${{ secrets.BUILD_CERTIFICATE_P12_BASE64 }}
           BUILD_CERTIFICATE_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_PASSWORD }}
           BUILD_KEYCHAIN_PASSWORD: ${{ secrets.BUILD_KEYCHAIN_PASSWORD }}
           DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets['HOMEBREW_TAP_GITHUB_TOKEN'] }}
           NOTARYTOOL_KEY_ID: ${{ secrets.NOTARYTOOL_KEY_ID }}
           NOTARYTOOL_ISSUER_ID: ${{ secrets.NOTARYTOOL_ISSUER_ID }}
           NOTARYTOOL_PRIVATE_KEY: ${{ secrets.NOTARYTOOL_PRIVATE_KEY }}
@@ -37,6 +41,7 @@ jobs:
             BUILD_CERTIFICATE_PASSWORD
             BUILD_KEYCHAIN_PASSWORD
             DEVELOPER_ID_APPLICATION
+            HOMEBREW_TAP_GITHUB_TOKEN
             NOTARYTOOL_KEY_ID
             NOTARYTOOL_ISSUER_ID
             NOTARYTOOL_PRIVATE_KEY
@@ -135,6 +140,38 @@ jobs:
             build/release/grabber-${{ steps.version.outputs.version }}.zip
             build/release/grabber-${{ steps.version.outputs.version }}.zip.sha256
           generate_release_notes: true
+
+      - name: Update Homebrew tap cask
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets['HOMEBREW_TAP_GITHUB_TOKEN'] }}
+        run: |
+          rendered_cask="$GITHUB_WORKSPACE/build/release/grabber.rb"
+          tap_repo_dir="$RUNNER_TEMP/homebrew-grabber"
+          auth_url="https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/${HOMEBREW_TAP_REPO}.git"
+
+          if [[ ! -f "$rendered_cask" ]]; then
+            echo "rendered cask not found: $rendered_cask" >&2
+            exit 1
+          fi
+
+          git clone "$auth_url" "$tap_repo_dir"
+          cd "$tap_repo_dir"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          default_branch="$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')"
+          mkdir -p Casks
+          cp "$rendered_cask" Casks/grabber.rb
+
+          if git diff --quiet -- Casks/grabber.rb; then
+            echo "No tap cask changes to commit"
+            exit 0
+          fi
+
+          git add Casks/grabber.rb
+          git commit -m "Update grabber cask to v${{ steps.version.outputs.version }}"
+          git push origin "HEAD:$default_branch"
 
       - name: Clean up signing keychain
         if: always()

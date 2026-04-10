@@ -1,11 +1,11 @@
 # Grabber
 
-[![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-0f766e)](Casks/grabber.rb)
+[![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-0f766e)](https://github.com/ihsur7/grabber/releases)
 [![Build Status](https://github.com/ihsur7/grabber/actions/workflows/ci.yml/badge.svg)](https://github.com/ihsur7/grabber/actions/workflows/ci.yml)
 
 Grabber is a macOS menu bar utility for moving the frontmost window by holding a modifier key and dragging the mouse.
 
-Current release target: 1.0.0.
+Current release target: 1.0.1.
 
 ## License
 
@@ -13,22 +13,16 @@ Grabber is intended to be licensed under Apache License 2.0. You can distribute 
 
 ## Homebrew Tap
 
-This repository now acts as the Homebrew tap. The cask lives at [Casks/grabber.rb](Casks/grabber.rb), so users can either install directly from the tap repo or tap it first.
+The published Homebrew tap lives in the separate public `ihsur7/homebrew-grabber` repository.
 
-Direct install:
-
-```bash
-brew install --cask ihsur/grabber/grabber
-```
-
-Two-step install:
+Install with the normal tap flow:
 
 ```bash
-brew tap ihsur/grabber
+brew tap ihsur7/grabber
 brew install --cask grabber
 ```
 
-If you later move the cask into a dedicated tap repo, keep it at `Casks/grabber.rb`. A repo named like `homebrew-grabber` is recommended, but not required.
+This repo only keeps the tap template in [homebrew/grabber.rb.template](/Users/rushi/Developer/grabber/homebrew/grabber.rb.template). The release workflow renders that template and pushes the real cask into the tap repo automatically.
 
 ## Release Packaging
 
@@ -40,7 +34,7 @@ This repository is set up to produce a Homebrew-friendly release zip from the Xc
 ./scripts/package_release.sh 1.0.0
 ```
 
-The script builds the `grabber` scheme in Release mode, packages `grabber.app` into a zip, writes a matching SHA-256 file next to it, and updates [Casks/grabber.rb](Casks/grabber.rb) with the new checksum.
+The script builds the `grabber` scheme in Release mode, packages `Grabber.app` into a zip, writes a matching SHA-256 file next to it, and renders a tap-ready cask file at `build/release/grabber.rb` from [homebrew/grabber.rb.template](/Users/rushi/Developer/grabber/homebrew/grabber.rb.template).
 
 To build a signed and notarized release locally, export the same environment variables used by CI and then run:
 
@@ -58,7 +52,7 @@ NOTARYTOOL_KEY_PATH="$HOME/private_keys/AuthKey_XXXX.p8" \
 
 The workflow in [.github/workflows/release.yml](.github/workflows/release.yml) runs the same packaging script when you push a tag that starts with `v` or when you trigger it manually. A tag push publishes a release from that tag. A manual run creates or updates the matching `vX.Y.Z` GitHub Release from the selected commit.
 
-The release workflow now expects signing and notarization secrets. Configure these repository secrets before publishing:
+The release workflow now expects signing, notarization, and tap-publishing secrets. Configure these repository secrets before publishing:
 
 1. `BUILD_CERTIFICATE_P12_BASE64`: Base64-encoded Developer ID Application `.p12` certificate.
 2. `BUILD_CERTIFICATE_PASSWORD`: Password for that `.p12` file.
@@ -67,6 +61,7 @@ The release workflow now expects signing and notarization secrets. Configure the
 5. `NOTARYTOOL_KEY_ID`: App Store Connect API key ID.
 6. `NOTARYTOOL_ISSUER_ID`: App Store Connect API issuer ID.
 7. `NOTARYTOOL_PRIVATE_KEY`: Full contents of the `.p8` notary API key.
+8. `HOMEBREW_TAP_GITHUB_TOKEN`: Fine-grained GitHub token with contents write access to `ihsur7/homebrew-grabber`.
 
 You can create the certificate in Apple Developer, export it from Keychain Access as `.p12`, and encode it for GitHub with:
 
@@ -77,9 +72,9 @@ base64 -i developer-id-application.p12 | pbcopy
 ### Release checklist
 
 1. Build locally with `./scripts/package_release.sh 1.0.0`.
-2. Commit the updated checksum in [Casks/grabber.rb](Casks/grabber.rb).
-3. Tag the release as `v1.0.0` and push it.
-4. Confirm the GitHub Release contains `grabber-1.0.0.zip` and `grabber-1.0.0.zip.sha256`.
+2. Tag the release as `v1.0.0` and push it.
+3. Confirm the GitHub Release contains `grabber-1.0.0.zip` and `grabber-1.0.0.zip.sha256`.
+4. Confirm the workflow pushed the updated cask to your `homebrew-grabber` tap repo.
 
 ### Notes for Homebrew users
 
