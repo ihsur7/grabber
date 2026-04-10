@@ -3,7 +3,7 @@
 set -euo pipefail
 
 log() {
-  echo "==> $*"
+  echo "==> $*" >&2
 }
 
 bool_env() {
