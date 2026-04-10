@@ -140,6 +140,11 @@ struct SettingsView: View {
             GrabberSettingsSections(showAdvancedOptions: true)
 
             HStack {
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("v\(version)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button("Quit") {
                     NSApp.terminate(nil)
@@ -150,4 +155,8 @@ struct SettingsView: View {
         .padding(20)
         .frame(width: 420)
     }
+}
+
+#Preview {
+    SettingsView()
 }

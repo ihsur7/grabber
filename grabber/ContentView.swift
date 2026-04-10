@@ -34,6 +34,12 @@ struct ContentView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("v\(version)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
                 Spacer()
 
                 Button("Quit") { NSApp.terminate(nil) }
