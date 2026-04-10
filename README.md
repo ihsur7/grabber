@@ -1,11 +1,9 @@
 # Grabber
 
-[![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-0f766e)](https://github.com/ihsur7/grabber/releases)
+[![Releases](https://img.shields.io/github/v/release/ihsur7/grabber?display_name=tag&label=release)](https://github.com/ihsur7/grabber/releases)
 [![Build Status](https://github.com/ihsur7/grabber/actions/workflows/ci.yml/badge.svg)](https://github.com/ihsur7/grabber/actions/workflows/ci.yml)
 
 Grabber is a macOS menu bar utility for moving the frontmost window by holding a modifier key and dragging the mouse.
-
-Current release target: 1.0.1.
 
 ## License
 
@@ -31,10 +29,10 @@ This repository is set up to produce a Homebrew-friendly release zip from the Xc
 ### Build a release zip locally
 
 ```bash
-./scripts/package_release.sh 1.0.0
+./scripts/package_release.sh <version>
 ```
 
-The script builds the `grabber` scheme in Release mode, packages `Grabber.app` into a zip, writes a matching SHA-256 file next to it, and renders a tap-ready cask file at `build/release/grabber.rb` from [homebrew/grabber.rb.template](/Users/rushi/Developer/grabber/homebrew/grabber.rb.template).
+The script builds the `grabber` scheme in Release mode, overrides the app's release version from the version argument you pass in, packages `Grabber.app` into a zip, writes a matching SHA-256 file next to it, and renders a tap-ready cask file at `build/release/grabber.rb` from [homebrew/grabber.rb.template](/Users/rushi/Developer/grabber/homebrew/grabber.rb.template).
 
 To build a signed and notarized release locally, export the same environment variables used by CI and then run:
 
@@ -45,7 +43,7 @@ DEVELOPER_ID_APPLICATION="Developer ID Application: Your Name (TEAMID)" \
 NOTARYTOOL_KEY_ID="..." \
 NOTARYTOOL_ISSUER_ID="..." \
 NOTARYTOOL_KEY_PATH="$HOME/private_keys/AuthKey_XXXX.p8" \
-./scripts/package_release.sh 1.0.0
+./scripts/package_release.sh <version>
 ```
 
 ### GitHub release workflow
@@ -71,9 +69,9 @@ base64 -i developer-id-application.p12 | pbcopy
 
 ### Release checklist
 
-1. Build locally with `./scripts/package_release.sh 1.0.0`.
-2. Tag the release as `v1.0.0` and push it.
-3. Confirm the GitHub Release contains `grabber-1.0.0.zip` and `grabber-1.0.0.zip.sha256`.
+1. Build locally with `./scripts/package_release.sh <version>` if you want a preflight check.
+2. Tag the release as `v<version>` and push it.
+3. Confirm the GitHub Release contains `grabber-<version>.zip` and `grabber-<version>.zip.sha256`.
 4. Confirm the workflow pushed the updated cask to your `homebrew-grabber` tap repo.
 
 ### Notes for Homebrew users
