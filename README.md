@@ -1,7 +1,6 @@
 # Grabber
 
 [![Releases](https://img.shields.io/github/v/release/ihsur7/grabber?display_name=tag&label=release)](https://github.com/ihsur7/grabber/releases)
-[![Build Status](https://github.com/ihsur7/grabber/actions/workflows/ci.yml/badge.svg)](https://github.com/ihsur7/grabber/actions/workflows/ci.yml)
 
 Grabber is a macOS menu bar utility for moving the frontmost window by holding a modifier key and dragging the mouse.
 
@@ -20,7 +19,7 @@ brew tap ihsur7/grabber
 brew install --cask grabber
 ```
 
-This repo only keeps the tap template in [homebrew/grabber.rb.template](/Users/rushi/Developer/grabber/homebrew/grabber.rb.template). The release workflow renders that template and pushes the real cask into the tap repo automatically.
+This repo only keeps the tap template in [homebrew/grabber.rb.template](homebrew/grabber.rb.template). The Xcode Cloud release script renders that template and pushes the real cask into the tap repo automatically.
 
 ## Release Packaging
 
@@ -32,9 +31,9 @@ This repository is set up to produce a Homebrew-friendly release zip from the Xc
 ./scripts/package_release.sh <version>
 ```
 
-The script builds the `grabber` scheme in Release mode, overrides the app's release version from the version argument you pass in, packages `Grabber.app` into a zip, writes a matching SHA-256 file next to it, and renders a tap-ready cask file at `build/release/grabber.rb` from [homebrew/grabber.rb.template](/Users/rushi/Developer/grabber/homebrew/grabber.rb.template).
+The script builds the `grabber` scheme in Release mode, overrides the app's release version from the version argument you pass in, packages `Grabber.app` into a zip, writes a matching SHA-256 file next to it, and renders a tap-ready cask file at `build/release/grabber.rb` from [homebrew/grabber.rb.template](homebrew/grabber.rb.template). It can also package an already-exported app bundle, which is how Xcode Cloud reuses the same logic after an archive build.
 
-To build a signed and notarized release locally, export the same environment variables used by CI and then run:
+To build a signed and notarized release locally, export the same signing inputs your Xcode Cloud archive uses and then run:
 
 ```bash
 SIGN_RELEASE=1 \
@@ -46,22 +45,28 @@ NOTARYTOOL_KEY_PATH="$HOME/private_keys/AuthKey_XXXX.p8" \
 ./scripts/package_release.sh <version>
 ```
 
-### GitHub release workflow
+### Xcode Cloud release workflow
 
-The workflow in [.github/workflows/release.yml](.github/workflows/release.yml) runs the same packaging script when you push a tag that starts with `v` or when you trigger it manually. A tag push publishes a release from that tag. A manual run creates or updates the matching `vX.Y.Z` GitHub Release from the selected commit.
+This repository now publishes signed macOS releases from Xcode Cloud. The custom post-build script at [ci_scripts/ci_post_xcodebuild.sh](ci_scripts/ci_post_xcodebuild.sh) runs after a successful macOS archive action, packages the exported `Grabber.app`, uploads `grabber-<version>.zip` and `grabber-<version>.zip.sha256` to the matching GitHub Release, and updates the `ihsur7/homebrew-grabber` tap.
 
-The release workflow now expects signing, notarization, and tap-publishing secrets. Configure these repository secrets before publishing:
+Configure your Xcode Cloud workflow with:
 
-1. `BUILD_CERTIFICATE_P12_BASE64`: Base64-encoded Developer ID Application `.p12` certificate.
-2. `BUILD_CERTIFICATE_PASSWORD`: Password for that `.p12` file.
-3. `BUILD_KEYCHAIN_PASSWORD`: Temporary keychain password used on the GitHub runner.
-4. `DEVELOPER_ID_APPLICATION`: Exact signing identity name, such as `Developer ID Application: Your Name (TEAMID)`.
-5. `NOTARYTOOL_KEY_ID`: App Store Connect API key ID.
-6. `NOTARYTOOL_ISSUER_ID`: App Store Connect API issuer ID.
-7. `NOTARYTOOL_PRIVATE_KEY`: Full contents of the `.p8` notary API key.
-8. `HOMEBREW_TAP_GITHUB_TOKEN`: Fine-grained GitHub token with contents write access to `ihsur7/homebrew-grabber`.
+1. A macOS `Archive` action that exports a `Developer ID` signed app, so `CI_DEVELOPER_ID_SIGNED_APP_PATH` is available to the post-build script.
+2. A tag-based start condition for `v*` if you want tagging to trigger publishing automatically.
+3. Secret environment variable `GITHUB_RELEASE_TOKEN`: GitHub token with `contents:write` access to `ihsur7/grabber`.
+4. Secret environment variable `HOMEBREW_TAP_GITHUB_TOKEN`: GitHub token with `contents:write` access to `ihsur7/homebrew-grabber`.
+5. Optional environment variable `GITHUB_RELEASE_REPO`: defaults to `ihsur7/grabber`.
+6. Optional environment variable `HOMEBREW_TAP_REPO`: defaults to `ihsur7/homebrew-grabber`.
+7. Optional environment variable `PUBLISH_RELEASE=1`: required for manual archive runs that are not started from a tag.
+8. Optional environment variable `RELEASE_VERSION=<version>`: required for manual archive runs that are not started from a `v<version>` tag.
 
-You can create the certificate in Apple Developer, export it from Keychain Access as `.p12`, and encode it for GitHub with:
+For tagged archive builds, the script derives the release version from the tag automatically. For manual archive builds, set both `PUBLISH_RELEASE=1` and `RELEASE_VERSION=<version>` in the workflow environment.
+
+### Local preflight vs Xcode Cloud publish
+
+Use the local packaging script when you want to validate the release output before cutting a tag. Use Xcode Cloud when you want the signed release published and the Homebrew tap updated.
+
+If you still need to create a Developer ID certificate for local packaging, you can export it from Keychain Access as `.p12` and encode it with:
 
 ```bash
 base64 -i developer-id-application.p12 | pbcopy
@@ -70,9 +75,10 @@ base64 -i developer-id-application.p12 | pbcopy
 ### Release checklist
 
 1. Build locally with `./scripts/package_release.sh <version>` if you want a preflight check.
-2. Tag the release as `v<version>` and push it.
-3. Confirm the GitHub Release contains `grabber-<version>.zip` and `grabber-<version>.zip.sha256`.
-4. Confirm the workflow pushed the updated cask to your `homebrew-grabber` tap repo.
+2. Tag the release as `v<version>` and push it so the Xcode Cloud archive workflow runs.
+3. Confirm the Xcode Cloud build exported a Developer ID signed app and completed the post-build publish step.
+4. Confirm the GitHub Release contains `grabber-<version>.zip` and `grabber-<version>.zip.sha256`.
+5. Confirm the workflow pushed the updated cask to your `homebrew-grabber` tap repo.
 
 ### Notes for Homebrew users
 
@@ -80,4 +86,4 @@ Grabber requires Accessibility permission to grab and move other app windows. Ho
 
 ## Notes for maintainers
 
-The release workflow now fails fast if signing secrets are missing, which prevents shipping an unsigned GitHub Release by accident. Local packaging still works unsigned unless you explicitly set `SIGN_RELEASE=1` or `NOTARIZE_RELEASE=1`.
+GitHub Actions no longer builds or publishes the app in this repository. Local packaging still works unsigned unless you explicitly set `SIGN_RELEASE=1` or `NOTARIZE_RELEASE=1`, and signed release publishing now depends on the Xcode Cloud archive workflow being configured correctly.

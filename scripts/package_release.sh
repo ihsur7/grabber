@@ -45,18 +45,27 @@ rendered_cask_file="$output_dir/grabber.rb"
 cask_source_repository="${HOMEBREW_CASK_SOURCE_REPOSITORY:-ihsur7/grabber}"
 derived_data_dir="$output_dir/DerivedData"
 build_products_dir="$derived_data_dir/Build/Products/Release"
-app_path="$build_products_dir/Grabber.app"
+source_app_path="${PREBUILT_APP_PATH:-$build_products_dir/Grabber.app}"
+staging_dir="$output_dir/staged"
+app_path="$staging_dir/Grabber.app"
 app_icon_fallback_file="grabber/Resources/Icon.icns"
 zip_path="$output_dir/grabber-$version.zip"
 checksum_path="$zip_path.sha256"
 sign_release="${SIGN_RELEASE:-0}"
 notarize_release="${NOTARIZE_RELEASE:-0}"
+allow_app_icon_repair=1
 
 if bool_env "$notarize_release" && ! bool_env "$sign_release"; then
   sign_release=1
 fi
 
 build_app() {
+  if [[ -n "${PREBUILT_APP_PATH:-}" ]]; then
+    log "Skipping build; using prebuilt app bundle at $source_app_path"
+    allow_app_icon_repair=0
+    return
+  fi
+
   log "Building app bundle"
 
   xcodebuild \
@@ -72,6 +81,18 @@ build_app() {
     build
 }
 
+stage_app() {
+  if [[ ! -d "$source_app_path" ]]; then
+    echo "expected app bundle not found: $source_app_path" >&2
+    exit 1
+  fi
+
+  log "Staging app bundle"
+  rm -rf "$staging_dir"
+  mkdir -p "$staging_dir"
+  ditto "$source_app_path" "$app_path"
+}
+
 ensure_app_icon() {
   local info_plist icon_file icon_name icon_path
 
@@ -84,6 +105,11 @@ ensure_app_icon() {
   if [[ -f "$icon_path" ]]; then
     log "Found bundled app icon at $icon_path"
     return
+  fi
+
+  if [[ "$allow_app_icon_repair" -ne 1 ]]; then
+    echo "prebuilt app bundle is missing its icon at $icon_path" >&2
+    exit 1
   fi
 
   if [[ ! -f "$app_icon_fallback_file" ]]; then
@@ -171,12 +197,7 @@ rm -rf "$output_dir"
 mkdir -p "$output_dir"
 
 build_app
-
-if [[ ! -d "$app_path" ]]; then
-  echo "expected app bundle not found: $app_path" >&2
-  exit 1
-fi
-
+stage_app
 ensure_app_icon
 sign_app
 package_zip
