@@ -88,7 +88,7 @@ class WindowMover: ObservableObject {
     // MARK: - Window grab / release
 
     private func grabWindowAtCursor() {
-        let cursor = currentCursorLocation()
+        let cursor = currentCursorInQuartz()
         guard let element = axElementAt(cursor),
               let window = findWindowElement(from: element),
               let windowPos = getPosition(of: window) else { return }
@@ -121,17 +121,18 @@ class WindowMover: ObservableObject {
 
     private func moveGrabbedWindow() {
         guard let window = grabbedWindow else { return }
-        let cursor = currentCursorLocation()
+        let cursor = currentCursorInQuartz()
         let newPos = CGPoint(x: cursor.x - grabOffset.x, y: cursor.y - grabOffset.y)
         setPosition(newPos, on: window)
     }
 
     // MARK: - Coordinate helpers
 
-    /// Use the global screen coordinate space returned by NSEvent.mouseLocation.
-    /// AX hit-testing and window positioning expect the same coordinate space.
-    private func currentCursorLocation() -> CGPoint {
-        NSEvent.mouseLocation
+    /// Convert Cocoa screen coordinates into the Quartz coordinate space used by AX.
+    private func currentCursorInQuartz() -> CGPoint {
+        let p = NSEvent.mouseLocation
+        let h = NSScreen.screens.first?.frame.height ?? 0
+        return CGPoint(x: p.x, y: h - p.y)
     }
 
     // MARK: - Accessibility helpers

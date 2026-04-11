@@ -276,8 +276,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Grabber;
-				INFOPLIST_KEY_CFBundleName = Grabber;
+				INFOPLIST_KEY_CFBundleDisplayName = "Grabber Debug";
+				INFOPLIST_KEY_CFBundleName = "Grabber Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -286,8 +286,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber;
-				PRODUCT_NAME = Grabber;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber.debug;
+				PRODUCT_NAME = "Grabber Debug";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
