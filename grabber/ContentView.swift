@@ -36,7 +36,7 @@ struct ContentView: View {
 
             // ── Header ──────────────────────────────────────────────
             HStack(spacing: 8) {
-                Image(systemName: "hand.raised.fill")
+                Image(windowMover.isHotkeyActive ? "closehand-symbol" : "openhand-symbol")
                     .font(.title2)
                     .foregroundStyle(.primary)
                 Text("Grabber")

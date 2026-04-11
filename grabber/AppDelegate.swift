@@ -8,6 +8,9 @@ import Combine
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private static let openHandAssetName = "openhand-symbol"
+    private static let closedHandAssetName = "closehand-symbol"
+
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var aboutWindowController: NSWindowController?
@@ -29,8 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         guard let button = statusItem.button else { return }
-        button.image = NSImage(systemSymbolName: "hand.raised.fill",
-                               accessibilityDescription: "Grabber")
+        updateStatusItemIcon(isHotkeyActive: windowMover.isHotkeyActive)
         button.action = #selector(togglePopover)
         button.target = self
     }
@@ -58,6 +60,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.applyActivationPolicy(showDockIcon: showDockIcon)
             }
             .store(in: &cancellables)
+
+        windowMover.$isHotkeyActive
+            .removeDuplicates()
+            .sink { [weak self] isHotkeyActive in
+                self?.updateStatusItemIcon(isHotkeyActive: isHotkeyActive)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateStatusItemIcon(isHotkeyActive: Bool) {
+        guard let button = statusItem.button else { return }
+
+        let assetName = isHotkeyActive ? Self.closedHandAssetName : Self.openHandAssetName
+        guard let image = NSImage(named: assetName) else { return }
+
+        let configuredImage = image.withSymbolConfiguration(
+            NSImage.SymbolConfiguration(pointSize: 15, weight: .regular, scale: .large)
+        ) ?? image
+
+        configuredImage.isTemplate = true
+        button.image = configuredImage
+        button.image?.accessibilityDescription = "Grabber"
     }
 
     private func applyActivationPolicy(showDockIcon: Bool) {

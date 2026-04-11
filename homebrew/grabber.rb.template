@@ -1,0 +1,23 @@
+cask "grabber" do
+  version "1.0.0"
+  sha256 "REPLACE_WITH_RELEASE_SHA256"
+
+  url "https://github.com/OWNER/REPO/releases/download/v#{version}/grabber-#{version}.zip"
+  name "Grabber"
+  desc "Menu bar utility for moving windows by holding a modifier key"
+  homepage "https://github.com/OWNER/REPO"
+
+  depends_on macos: ">= :ventura"
+
+  app "grabber.app", target: "Grabber.app"
+
+  livecheck do
+    url :homepage
+    strategy :github_latest
+  end
+
+  zap trash: [
+    "~/Library/Preferences/com.ihsur.grabber.plist",
+    "~/Library/Saved Application State/com.ihsur.grabber.savedState",
+  ]
+end
