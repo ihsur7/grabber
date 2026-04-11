@@ -22,6 +22,8 @@ struct ContentView: View {
         (.shift,   "⇧"),
     ]
     
+    let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+    
     @ViewBuilder
     func glassEffect() -> some View {
         if #available(macOS 26.0, *) {
@@ -42,6 +44,9 @@ struct ContentView: View {
                 Text("Grabber")
                     .font(.headline)
                 Spacer()
+                Text("v\(version)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // ── Accessibility status ─────────────────────────────────
