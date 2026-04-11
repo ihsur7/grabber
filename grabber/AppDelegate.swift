@@ -15,8 +15,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var aboutWindowController: NSWindowController?
+    private var updateWindowController: NSWindowController?
     private var cancellables = Set<AnyCancellable>()
     let windowMover = WindowMover()
+    let updateChecker = UpdateChecker.shared
     let appVisibilityStore = AppVisibilityStore.shared
     let launchAtLoginStore = LaunchAtLoginStore.shared
 
@@ -28,6 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupPopover()
         observeStateChanges()
         windowMover.startMonitoring()
+        updateChecker.checkInBackground()
     }
 
     // MARK: - Status bar
@@ -47,12 +50,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 280, height: 300)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
-            rootView: ContentView(onOpenAbout: { [weak self] in
-                self?.showAboutWindow()
-            })
-                .environmentObject(appVisibilityStore)
-                .environmentObject(launchAtLoginStore)
-                .environmentObject(windowMover)
+            rootView: ContentView(
+                onOpenAbout: { [weak self] in self?.showAboutWindow() },
+                onUpdate:    { [weak self] in self?.showUpdateWindow() }
+            )
+            .environmentObject(appVisibilityStore)
+            .environmentObject(launchAtLoginStore)
+            .environmentObject(windowMover)
+            .environmentObject(updateChecker)
         )
     }
 
@@ -129,7 +134,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func makeAboutWindowController() -> NSWindowController {
-        let hostingController = NSHostingController(rootView: AboutView())
+        let hostingController = NSHostingController(
+            rootView: AboutView(onUpdate: { [weak self] in
+                self?.aboutWindowController?.close()
+                self?.showUpdateWindow()
+            })
+            .environmentObject(updateChecker)
+        )
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 420, height: 320),
             styleMask: [.titled, .closable, .miniaturizable],
@@ -137,6 +148,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
         window.title = "About Grabber"
+        window.contentViewController = hostingController
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.moveToActiveSpace]
+        window.center()
+        return NSWindowController(window: window)
+    }
+
+    private func showUpdateWindow() {
+        popover.performClose(nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let wc = self.updateWindowController ?? self.makeUpdateWindowController()
+            self.updateWindowController = wc
+            wc.showWindow(nil)
+            guard let window = wc.window else { return }
+            NSRunningApplication.current.activate(options: [.activateAllWindows])
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    private func makeUpdateWindowController() -> NSWindowController {
+        let hostingController = NSHostingController(
+            rootView: UpdateProgressView()
+                .environmentObject(updateChecker)
+        )
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 190),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Update Grabber"
         window.contentViewController = hostingController
         window.isReleasedWhenClosed = false
         window.collectionBehavior = [.moveToActiveSpace]

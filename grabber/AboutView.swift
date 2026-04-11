@@ -3,6 +3,8 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var updateChecker: UpdateChecker
+    let onUpdate: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -37,6 +39,9 @@ struct AboutView: View {
             Spacer(minLength: 0)
 
             HStack {
+                // ── Check for Updates ────────────────────────────────
+                checkForUpdatesButton
+
                 Spacer()
                 Button("Close") {
                     dismiss()
@@ -47,6 +52,32 @@ struct AboutView: View {
         .padding(20)
         .frame(width: 360)
         .textSelection(.enabled)
+    }
+
+    @ViewBuilder
+    private var checkForUpdatesButton: some View {
+        switch updateChecker.state {
+        case .idle, .upToDate, .error:
+            Button("Check for Updates") {
+                Task { await updateChecker.checkForUpdates() }
+            }
+            .controlSize(.small)
+        case .checking:
+            Button("Checking…") {}
+                .controlSize(.small)
+                .disabled(true)
+        case .available(let v, _):
+            Button("Update to v\(v)") {
+                onUpdate()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        case .downloading, .readyToInstall:
+            Button("Installing…") {
+                onUpdate()
+            }
+            .controlSize(.small)
+        }
     }
 
     private var iconAssetName: String {
@@ -81,11 +112,15 @@ private enum AppMetadata {
 
     static var versionDescription: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
-        return "\(version)" //(\(build))
+        return "\(version)"
     }
 
     static var bundleIdentifier: String {
         Bundle.main.bundleIdentifier ?? "Unknown"
     }
+}
+
+#Preview {
+    AboutView(onUpdate: {})
+        .environmentObject(UpdateChecker.shared)
 }

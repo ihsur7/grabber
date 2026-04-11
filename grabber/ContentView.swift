@@ -12,8 +12,10 @@ struct ContentView: View {
     @EnvironmentObject var appVisibilityStore: AppVisibilityStore
     @EnvironmentObject var launchAtLoginStore: LaunchAtLoginStore
     @EnvironmentObject var windowMover: WindowMover
+    @EnvironmentObject var updateChecker: UpdateChecker
     @ObservedObject var hotkeyStore = HotkeyStore.shared
     let onOpenAbout: () -> Void
+    let onUpdate: () -> Void
 
     // Modifier options shown as toggle buttons
     private let modifierOptions: [(flag: NSEvent.ModifierFlags, label: String)] = [
@@ -45,9 +47,17 @@ struct ContentView: View {
                 Text("Grabber")
                     .font(.headline)
                 Spacer()
-                Text("v\(version)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if case .available(let newVersion, _) = updateChecker.state {
+                    Button("↑ v\(newVersion)") {
+                        onUpdate()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                } else {
+                    Text("v\(version)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             // ── Accessibility status ─────────────────────────────────
