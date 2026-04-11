@@ -1,11 +1,11 @@
 {
   "images" : [
     {
+      "filename" : "GIcon-iOS-Dark-1024x1024@1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "Icon-iOS-Dark-256x256@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },

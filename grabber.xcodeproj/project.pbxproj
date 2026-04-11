@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		D820C8372F7613BF00F2E027 /* Grabber Debug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Grabber Debug.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E3D4C5B6A7980F1E2D3C4B5A /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		D820C8372F7613BF00F2E027 /* grabber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = grabber.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F43D8E6A2BC14E5CA6F7E1A1 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -42,7 +42,7 @@
 			isa = PBXGroup;
 			children = (
 				D820C8392F7613BF00F2E027 /* grabber */,
-				B1C2D3E4F5061728394A5B6C /* Config */,
+				F43D8E6B2BC14E5CA6F7E1A1 /* Config */,
 				D820C8382F7613BF00F2E027 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -53,6 +53,14 @@
 				D820C8372F7613BF00F2E027 /* Grabber Debug.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F43D8E6B2BC14E5CA6F7E1A1 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F43D8E6A2BC14E5CA6F7E1A1 /* Version.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -261,7 +269,7 @@
 		};
 		D820C8452F7613C000F2E027 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E3D4C5B6A7980F1E2D3C4B5A /* Version.xcconfig */;
+			baseConfigurationReference = F43D8E6A2BC14E5CA6F7E1A1 /* Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -285,7 +293,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber;
 				PRODUCT_NAME = "Grabber Debug";
 				REGISTER_APP_GROUPS = YES;
@@ -300,7 +308,7 @@
 		};
 		D820C8462F7613C000F2E027 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E3D4C5B6A7980F1E2D3C4B5A /* Version.xcconfig */;
+			baseConfigurationReference = F43D8E6A2BC14E5CA6F7E1A1 /* Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -324,7 +332,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber;
 				PRODUCT_NAME = Grabber;
 				PROVISIONING_PROFILE_SPECIFIER = "";

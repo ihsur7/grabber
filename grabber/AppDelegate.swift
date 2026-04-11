@@ -8,19 +8,22 @@ import Combine
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private static let openHandAssetName = "openhand-symbol"
+    private static let closedHandAssetName = "closehand-symbol"
+
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
+    private var aboutWindowController: NSWindowController?
     private var cancellables = Set<AnyCancellable>()
-
-    private let appPreferences = AppPreferencesStore.shared
-    private let applicationIconImage = AppDelegate.loadApplicationIcon()
     let windowMover = WindowMover()
+    let appVisibilityStore = AppVisibilityStore.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        applyApplicationIcon()
-        observeAppPreferences()
+        applyActivationPolicy(showDockIcon: appVisibilityStore.showsDockIcon)
+
         setupStatusItem()
         setupPopover()
+        observeVisibilityChanges()
         windowMover.startMonitoring()
     }
 
@@ -71,8 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         guard let button = statusItem.button else { return }
-        button.image = NSImage(systemSymbolName: "hand.raised.fill",
-                               accessibilityDescription: "Grabber")
+        updateStatusItemIcon(isHotkeyActive: windowMover.isHotkeyActive)
         button.action = #selector(togglePopover)
         button.target = self
     }
@@ -84,11 +86,81 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 280, height: 260)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
-            rootView: ContentView(closePopover: { [weak self] in
-                self?.popover.performClose(nil)
+            rootView: ContentView(onOpenAbout: { [weak self] in
+                self?.showAboutWindow()
             })
+                .environmentObject(appVisibilityStore)
                 .environmentObject(windowMover)
         )
+    }
+
+    private func observeVisibilityChanges() {
+        appVisibilityStore.$showsDockIcon
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] showDockIcon in
+                self?.applyActivationPolicy(showDockIcon: showDockIcon)
+            }
+            .store(in: &cancellables)
+
+        windowMover.$isHotkeyActive
+            .removeDuplicates()
+            .sink { [weak self] isHotkeyActive in
+                self?.updateStatusItemIcon(isHotkeyActive: isHotkeyActive)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateStatusItemIcon(isHotkeyActive: Bool) {
+        guard let button = statusItem.button else { return }
+
+        let assetName = isHotkeyActive ? Self.closedHandAssetName : Self.openHandAssetName
+        guard let image = NSImage(named: assetName) else { return }
+
+        let configuredImage = image.withSymbolConfiguration(
+            NSImage.SymbolConfiguration(pointSize: 15, weight: .regular, scale: .large)
+        ) ?? image
+
+        configuredImage.isTemplate = true
+        button.image = configuredImage
+        button.image?.accessibilityDescription = "Grabber"
+    }
+
+    private func applyActivationPolicy(showDockIcon: Bool) {
+        let policy: NSApplication.ActivationPolicy = showDockIcon ? .regular : .accessory
+        NSApp.setActivationPolicy(policy)
+
+        if showDockIcon {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private func showAboutWindow() {
+        if aboutWindowController == nil {
+            let hostingController = NSHostingController(rootView: AboutView())
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 420, height: 320),
+                styleMask: [.titled, .closable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "About Grabber"
+            window.contentViewController = hostingController
+            window.isReleasedWhenClosed = false
+            window.collectionBehavior = [.moveToActiveSpace]
+            window.center()
+            aboutWindowController = NSWindowController(window: window)
+        }
+
+        popover.performClose(nil)
+        aboutWindowController?.showWindow(nil)
+        guard let window = aboutWindowController?.window else { return }
+
+        NSRunningApplication.current.activate(options: [.activateAllWindows])
+        NSApp.activate(ignoringOtherApps: true)
+        window.orderFrontRegardless()
+        window.makeMain()
+        window.makeKeyAndOrderFront(nil)
     }
 
     @objc private func togglePopover() {

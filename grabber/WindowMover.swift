@@ -8,6 +8,7 @@ import Combine
 
 class WindowMover: ObservableObject {
     @Published var isGrabbing = false
+    @Published var isHotkeyActive = false
     @Published var accessibilityGranted = false
 
     let hotkeyStore = HotkeyStore.shared
@@ -27,6 +28,7 @@ class WindowMover: ObservableObject {
 
     func stopMonitoring() {
         if let m = flagsMonitor { NSEvent.removeMonitor(m); flagsMonitor = nil }
+        resetHotkeyState()
         stopMouseTracking()
     }
 
@@ -34,6 +36,9 @@ class WindowMover: ObservableObject {
 
     func checkAccessibility() {
         accessibilityGranted = AXIsProcessTrusted()
+        if !accessibilityGranted {
+            resetHotkeyState()
+        }
     }
 
     func requestAccessibility() {
@@ -69,19 +74,41 @@ class WindowMover: ObservableObject {
     }
 
     private func handleFlagsChanged(_ event: NSEvent) {
-        guard accessibilityGranted else { return }
+        guard accessibilityGranted else {
+            resetHotkeyState()
+            return
+        }
         let required = hotkeyStore.modifiers
-        guard !required.isEmpty else { return }
+        guard !required.isEmpty else {
+            resetHotkeyState()
+            return
+        }
 
         // Only compare the four standard modifier flags
         let active = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        let hotkeyIsActive = active == required
 
-        if active == required, !isHotkeyDown {
+        if isHotkeyActive != hotkeyIsActive {
+            isHotkeyActive = hotkeyIsActive
+        }
+
+        if hotkeyIsActive, !isHotkeyDown {
             isHotkeyDown = true
             grabWindowAtCursor()
-        } else if active != required, isHotkeyDown {
+        } else if !hotkeyIsActive, isHotkeyDown {
             isHotkeyDown = false
             releaseWindow()
+        }
+    }
+
+    private func resetHotkeyState() {
+        if isHotkeyDown {
+            isHotkeyDown = false
+            releaseWindow()
+        }
+
+        if isHotkeyActive {
+            isHotkeyActive = false
         }
     }
 
