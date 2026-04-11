@@ -47,7 +47,7 @@ NOTARYTOOL_KEY_PATH="$HOME/private_keys/AuthKey_XXXX.p8" \
 
 ### Xcode Cloud release workflow
 
-This repository now publishes signed macOS releases from Xcode Cloud. The custom post-build script at [ci_scripts/ci_post_xcodebuild.sh](ci_scripts/ci_post_xcodebuild.sh) runs after a successful macOS archive action, packages the archived `Grabber.app` when it is present, falls back to `xcodebuild -exportArchive` only when needed, uploads `grabber-<version>.zip` and `grabber-<version>.zip.sha256` to the matching GitHub Release, and updates the `ihsur7/homebrew-grabber` tap.
+This repository now publishes signed macOS releases from Xcode Cloud. The custom post-build script at [ci_scripts/ci_post_xcodebuild.sh](ci_scripts/ci_post_xcodebuild.sh) runs after a successful macOS archive action, packages the archived `Grabber.app` when it is present, falls back to `xcodebuild -exportArchive` only when needed, uploads `grabber-<version>.zip` and `grabber-<version>.zip.sha256` to the matching GitHub Release, updates the `ihsur7/homebrew-grabber` tap, and prunes older GitHub releases and matching tags so only the newest 3 remain by default.
 
 Configure your Xcode Cloud workflow with:
 
@@ -60,6 +60,7 @@ Configure your Xcode Cloud workflow with:
 7. Optional environment variable `HOMEBREW_TAP_REPO`: defaults to `ihsur7/homebrew-grabber`.
 8. Optional environment variable `PUBLISH_RELEASE=1`: required for manual archive runs that are not started from a tag.
 9. Optional environment variable `RELEASE_VERSION=<version>`: required for manual archive runs that are not started from a `v<version>` tag.
+10. Optional environment variable `RELEASE_RETENTION_COUNT=<count>`: defaults to `3` and controls how many GitHub releases and matching tags are retained after each successful publish.
 
 For tagged archive builds, the script derives the release version from the tag automatically. For manual archive builds, set both `PUBLISH_RELEASE=1` and `RELEASE_VERSION=<version>` in the workflow environment.
 

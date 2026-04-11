@@ -212,6 +212,15 @@ upload_asset() {
     >/dev/null
 }
 
+url_encode() {
+  /usr/bin/python3 - "$1" <<'PY'
+import sys
+from urllib.parse import quote
+
+print(quote(sys.argv[1], safe=""))
+PY
+}
+
 resolve_release() {
   local tag_name="$1"
   local version="$2"
@@ -288,6 +297,82 @@ publish_github_release() {
   resolve_release "$tag_name" "$version" "$response_file"
   upload_asset "$response_file" "$zip_path" "application/zip"
   upload_asset "$response_file" "$checksum_path" "text/plain"
+}
+
+prune_old_github_releases() {
+  local keep_count releases_file stale_releases release_id tag_name encoded_tag delete_status
+
+  require_command curl
+  require_env GITHUB_RELEASE_TOKEN
+  require_env GITHUB_RELEASE_REPO
+
+  keep_count="${RELEASE_RETENTION_COUNT:-3}"
+  if ! [[ "$keep_count" =~ ^[0-9]+$ ]] || (( keep_count < 1 )); then
+    echo "RELEASE_RETENTION_COUNT must be a positive integer; got: $keep_count" >&2
+    exit 1
+  fi
+
+  releases_file="$(mktemp)"
+  curl --fail --silent --show-error \
+    -H "Authorization: Bearer $GITHUB_RELEASE_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/$GITHUB_RELEASE_REPO/releases?per_page=100" \
+    > "$releases_file"
+
+  stale_releases="$(/usr/bin/python3 - "$releases_file" "$keep_count" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    releases = json.load(handle)
+
+keep_count = int(sys.argv[2])
+for release in releases[keep_count:]:
+    release_id = release.get("id")
+    tag_name = release.get("tag_name")
+    if release_id and tag_name:
+        print(f"{release_id}\t{tag_name}")
+PY
+)"
+
+  rm -f "$releases_file"
+
+  if [[ -z "$stale_releases" ]]; then
+    log "GitHub release retention already within limit ($keep_count)"
+    return
+  fi
+
+  log "Pruning GitHub releases and tags beyond newest $keep_count"
+  while IFS=$'\t' read -r release_id tag_name; do
+    [[ -z "$release_id" || -z "$tag_name" ]] && continue
+
+    log "Deleting GitHub release $tag_name ($release_id)"
+    delete_status="$(curl --silent --show-error \
+      -o /dev/null \
+      -w '%{http_code}' \
+      -X DELETE \
+      -H "Authorization: Bearer $GITHUB_RELEASE_TOKEN" \
+      -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/$GITHUB_RELEASE_REPO/releases/$release_id")"
+    if [[ "$delete_status" != "204" && "$delete_status" != "404" ]]; then
+      echo "failed to delete GitHub release $tag_name ($release_id) (HTTP $delete_status)" >&2
+      exit 1
+    fi
+
+    encoded_tag="$(url_encode "$tag_name")"
+    log "Deleting Git tag $tag_name"
+    delete_status="$(curl --silent --show-error \
+      -o /dev/null \
+      -w '%{http_code}' \
+      -X DELETE \
+      -H "Authorization: Bearer $GITHUB_RELEASE_TOKEN" \
+      -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/$GITHUB_RELEASE_REPO/git/refs/tags/$encoded_tag")"
+    if [[ "$delete_status" != "204" && "$delete_status" != "404" ]]; then
+      echo "failed to delete Git tag $tag_name (HTTP $delete_status)" >&2
+      exit 1
+    fi
+  done <<< "$stale_releases"
 }
 
 update_homebrew_tap() {
@@ -397,6 +482,7 @@ main() {
 
   publish_github_release "$version" "$output_dir"
   update_homebrew_tap "$version" "$output_dir"
+  prune_old_github_releases
 }
 
 main "$@"
