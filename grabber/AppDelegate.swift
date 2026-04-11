@@ -75,6 +75,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
                 self?.launchAtLoginStore.refresh()
+                self?.windowMover.checkAccessibility()
             }
             .store(in: &cancellables)
     }

@@ -44,9 +44,9 @@ class WindowMover: ObservableObject {
     func requestAccessibility() {
         let options = [(kAXTrustedCheckOptionPrompt.takeRetainedValue() as String): true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
-        // Re-check after a short delay so the published property updates in the UI
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.checkAccessibility()
+        // On macOS 13+ the prompt API no longer navigates to System Settings; open it directly.
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
         }
     }
 
