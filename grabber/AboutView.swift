@@ -57,26 +57,40 @@ struct AboutView: View {
     @ViewBuilder
     private var checkForUpdatesButton: some View {
         switch updateChecker.state {
-        case .idle, .upToDate, .error:
+        case .idle:
             Button("Check for Updates") {
-                Task { await updateChecker.checkForUpdates() }
+                updateChecker.checkInBackground()
             }
-            .controlSize(.small)
+        case .upToDate:
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("Up to Date")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+        case .error:
+            Button {
+                updateChecker.checkInBackground()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Error")
+                }
+            }
         case .checking:
             Button("Checking…") {}
-                .controlSize(.small)
                 .disabled(true)
         case .available(let v, _):
             Button("Update to v\(v)") {
                 onUpdate()
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.small)
         case .downloading, .readyToInstall:
             Button("Installing…") {
                 onUpdate()
             }
-            .controlSize(.small)
         }
     }
 
