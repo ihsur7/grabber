@@ -11,7 +11,7 @@
   <a href="https://www.buymeacoffee.com/ihsur7"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
 </p>
 
-<p align="center">Move any window from anywhere — hold a hotkey and drag.</p>
+<p align="center">Grab 'em by the hotkeys.</p>
 
 Grabber is a lightweight macOS menu bar utility that lets you move any window by holding a modifier key and dragging anywhere on its surface. No titlebar required.
 
