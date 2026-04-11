@@ -9,8 +9,10 @@ import SwiftUI
 import AppKit
 
 struct ContentView: View {
+    @EnvironmentObject var appVisibilityStore: AppVisibilityStore
     @EnvironmentObject var windowMover: WindowMover
     @ObservedObject var hotkeyStore = HotkeyStore.shared
+    let onOpenAbout: () -> Void
 
     // Modifier options shown as toggle buttons
     private let modifierOptions: [(flag: NSEvent.ModifierFlags, label: String)] = [
@@ -98,9 +100,22 @@ struct ContentView: View {
                 }
             }
 
+            Toggle("Show icon in Dock", isOn: $appVisibilityStore.showsDockIcon)
+
             // ── Quit ─────────────────────────────────────────────────
             HStack {
+                Button {
+                    onOpenAbout()
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .buttonStyle(.plain)
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .help("About Grabber")
+
                 Spacer()
+
                 Button("Quit") { NSApp.terminate(nil) }
                     .font(.caption)
                     .foregroundStyle(.secondary)
