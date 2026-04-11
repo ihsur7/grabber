@@ -27,48 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowMover.startMonitoring()
     }
 
-    private func observeAppPreferences() {
-        appPreferences.$showInDock
-            .removeDuplicates()
-            .sink { [weak self] showInDock in
-                self?.applyActivationPolicy(showInDock: showInDock)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func applyActivationPolicy(showInDock: Bool) {
-        let policy: NSApplication.ActivationPolicy = showInDock ? .regular : .accessory
-        guard NSApp.activationPolicy() != policy else { return }
-
-        NSApp.setActivationPolicy(policy)
-        if showInDock {
-            applyApplicationIcon()
-            NSApp.activate(ignoringOtherApps: true)
-        }
-    }
-
-    private func applyApplicationIcon() {
-        NSApp.applicationIconImage = applicationIconImage
-            ?? NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
-    }
-
-    private static func loadApplicationIcon() -> NSImage? {
-        guard let iconFile = Bundle.main.object(forInfoDictionaryKey: "CFBundleIconFile") as? String else {
-            return nil
-        }
-
-        let iconFilePath = iconFile as NSString
-        let resourceName = iconFilePath.deletingPathExtension
-        let resourceExtension = iconFilePath.pathExtension.isEmpty ? "icns" : iconFilePath.pathExtension
-
-        if let iconPath = Bundle.main.path(forResource: resourceName, ofType: resourceExtension),
-           let iconImage = NSImage(contentsOfFile: iconPath) {
-            return iconImage
-        }
-
-        return NSImage(named: NSImage.Name(iconFile))
-    }
-
     // MARK: - Status bar
 
     private func setupStatusItem() {
@@ -99,7 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] showDockIcon in
-                self?.applyActivationPolicy(showDockIcon: showDockIcon)
+                self?.scheduleActivationPolicyUpdate(showDockIcon: showDockIcon)
             }
             .store(in: &cancellables)
 
@@ -135,32 +93,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func showAboutWindow() {
-        if aboutWindowController == nil {
-            let hostingController = NSHostingController(rootView: AboutView())
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 420, height: 320),
-                styleMask: [.titled, .closable, .miniaturizable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = "About Grabber"
-            window.contentViewController = hostingController
-            window.isReleasedWhenClosed = false
-            window.collectionBehavior = [.moveToActiveSpace]
-            window.center()
-            aboutWindowController = NSWindowController(window: window)
+    private func scheduleActivationPolicyUpdate(showDockIcon: Bool) {
+        DispatchQueue.main.async {
+            self.applyActivationPolicy(showDockIcon: showDockIcon)
         }
+    }
 
+    private func showAboutWindow() {
         popover.performClose(nil)
-        aboutWindowController?.showWindow(nil)
-        guard let window = aboutWindowController?.window else { return }
 
-        NSRunningApplication.current.activate(options: [.activateAllWindows])
-        NSApp.activate(ignoringOtherApps: true)
-        window.orderFrontRegardless()
-        window.makeMain()
-        window.makeKeyAndOrderFront(nil)
+        // Defer window activation until after the popover finishes its update cycle.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let windowController = self.aboutWindowController ?? self.makeAboutWindowController()
+            self.aboutWindowController = windowController
+
+            windowController.showWindow(nil)
+            guard let window = windowController.window else { return }
+
+            NSRunningApplication.current.activate(options: [.activateAllWindows])
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    private func makeAboutWindowController() -> NSWindowController {
+        let hostingController = NSHostingController(rootView: AboutView())
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 320),
+            styleMask: [.titled, .closable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "About Grabber"
+        window.contentViewController = hostingController
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.moveToActiveSpace]
+        window.center()
+        return NSWindowController(window: window)
     }
 
     @objc private func togglePopover() {
@@ -169,7 +139,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.performClose(nil)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            DispatchQueue.main.async { [weak self] in
+                self?.popover.contentViewController?.view.window?.makeKey()
+            }
         }
     }
 }
