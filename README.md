@@ -47,12 +47,12 @@ NOTARYTOOL_KEY_PATH="$HOME/private_keys/AuthKey_XXXX.p8" \
 
 ### Xcode Cloud release workflow
 
-This repository now publishes signed macOS releases from Xcode Cloud. The custom post-build script at [ci_scripts/ci_post_xcodebuild.sh](ci_scripts/ci_post_xcodebuild.sh) runs after a successful macOS archive action, packages the exported `Grabber.app`, uploads `grabber-<version>.zip` and `grabber-<version>.zip.sha256` to the matching GitHub Release, and updates the `ihsur7/homebrew-grabber` tap.
+This repository now publishes signed macOS releases from Xcode Cloud. The custom post-build script at [ci_scripts/ci_post_xcodebuild.sh](ci_scripts/ci_post_xcodebuild.sh) runs after a successful macOS archive action, packages the archived `Grabber.app` when it is present, falls back to `xcodebuild -exportArchive` only when needed, uploads `grabber-<version>.zip` and `grabber-<version>.zip.sha256` to the matching GitHub Release, and updates the `ihsur7/homebrew-grabber` tap.
 
 Configure your Xcode Cloud workflow with:
 
 1. A macOS `Archive` action. Xcode Cloud may expose only `None`, `TestFlight (Internal Testing Only)`, and `App Store Connect` here for macOS.
-2. The app target's `Release` signing configuration set to `Developer ID` in Xcode, so the archive contains a Developer ID signed app that the post-build script can package.
+2. The app target's `Release` signing configuration set to `Developer ID` in Xcode, so the `.xcarchive` already contains a Developer ID signed app that the post-build script can package without requiring a second export step.
 3. A tag-based start condition for `v*` if you want tagging to trigger publishing automatically.
 4. Secret environment variable `GITHUB_RELEASE_TOKEN`: GitHub token with `contents:write` access to `ihsur7/grabber`.
 5. Secret environment variable `HOMEBREW_TAP_GITHUB_TOKEN`: GitHub token with `contents:write` access to `ihsur7/homebrew-grabber`.
@@ -77,7 +77,7 @@ base64 -i developer-id-application.p12 | pbcopy
 
 1. Build locally with `./scripts/package_release.sh <version>` if you want a preflight check.
 2. Tag the release as `v<version>` and push it so the Xcode Cloud archive workflow runs.
-3. Confirm the Xcode Cloud build exported a Developer ID signed app and completed the post-build publish step.
+3. Confirm the Xcode Cloud build produced a Developer ID signed app in the archive and completed the post-build publish step.
 4. Confirm the GitHub Release contains `grabber-<version>.zip` and `grabber-<version>.zip.sha256`.
 5. Confirm the workflow pushed the updated cask to your `homebrew-grabber` tap repo.
 

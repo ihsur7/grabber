@@ -65,6 +65,24 @@ export_developer_id_app() {
   return 1
 }
 
+resolve_archived_app() {
+  local archive_path="$1"
+  local archive_applications_dir app_path
+
+  archive_applications_dir="$archive_path/Products/Applications"
+  if [[ ! -d "$archive_applications_dir" ]]; then
+    return 1
+  fi
+
+  app_path="$(find "$archive_applications_dir" -maxdepth 1 -type d -name '*.app' | head -n 1)"
+  if [[ -z "$app_path" ]]; then
+    return 1
+  fi
+
+  log "Using .app from archive: $app_path"
+  printf '%s\n' "$app_path"
+}
+
 resolve_app_path() {
   local developer_id_path archive_path app_path
 
@@ -86,10 +104,19 @@ resolve_app_path() {
 
   archive_path="${CI_ARCHIVE_PATH:-}"
   if [[ -n "$archive_path" && -d "$archive_path" ]]; then
-    log "CI_DEVELOPER_ID_SIGNED_APP_PATH not set; exporting archive for Developer ID via xcodebuild"
-    app_path="$(export_developer_id_app "$archive_path")"
-    printf '%s\n' "$app_path"
-    return 0
+    if app_path="$(resolve_archived_app "$archive_path")"; then
+      printf '%s\n' "$app_path"
+      return 0
+    fi
+
+    log "Archive did not expose an app bundle directly; exporting archive for Developer ID via xcodebuild"
+    if app_path="$(export_developer_id_app "$archive_path")"; then
+      printf '%s\n' "$app_path"
+      return 0
+    fi
+
+    echo "could not resolve an app bundle from archive path: $archive_path" >&2
+    return 1
   fi
 
   echo "Neither CI_DEVELOPER_ID_SIGNED_APP_PATH nor CI_ARCHIVE_PATH is available" >&2
