@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		D820C8372F7613BF00F2E027 /* Grabber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Grabber.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D820C8372F7613BF00F2E027 /* Grabber Debug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Grabber Debug.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3D4C5B6A7980F1E2D3C4B5A /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -30,6 +30,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B1C2D3E4F5061728394A5B6C /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				E3D4C5B6A7980F1E2D3C4B5A /* Version.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		D820C82E2F7613BF00F2E027 = {
 			isa = PBXGroup;
 			children = (
@@ -39,18 +47,10 @@
 			);
 			sourceTree = "<group>";
 		};
-		B1C2D3E4F5061728394A5B6C /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				E3D4C5B6A7980F1E2D3C4B5A /* Version.xcconfig */,
-			);
-			path = Config;
-			sourceTree = "<group>";
-		};
 		D820C8382F7613BF00F2E027 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D820C8372F7613BF00F2E027 /* Grabber.app */,
+				D820C8372F7613BF00F2E027 /* Grabber Debug.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,7 +77,7 @@
 			packageProductDependencies = (
 			);
 			productName = grabber;
-			productReference = D820C8372F7613BF00F2E027 /* Grabber.app */;
+			productReference = D820C8372F7613BF00F2E027 /* Grabber Debug.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -276,7 +276,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grabber Debug";
+				INFOPLIST_KEY_CFBundleDisplayName = Grabber;
 				INFOPLIST_KEY_CFBundleName = "Grabber Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -286,7 +286,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber.debug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ihsur.grabber;
 				PRODUCT_NAME = "Grabber Debug";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
