@@ -1,39 +1,60 @@
 # Grabber
 
-[![Releases](https://img.shields.io/github/v/release/ihsur7/grabber?display_name=tag&label=release)](https://github.com/ihsur7/grabber/releases)
+[![Release](https://img.shields.io/github/v/release/ihsur7/grabber?display_name=tag&label=release)](https://github.com/ihsur7/grabber/releases)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey)](#requirements)
 
-Grabber is a macOS menu bar utility for moving the frontmost window by holding a modifier key and dragging the mouse.
+Move any window from anywhere — hold a hotkey and drag.
 
-## License
+Grabber is a lightweight macOS menu bar utility that lets you move any window by holding a modifier key and dragging anywhere on its surface. No titlebar required.
 
-Grabber is intended to be licensed under Apache License 2.0. You can distribute the source and prebuilt releases under the terms of that license, and the app may be sold or offered for free through channels such as the Mac App Store, GitHub, and Homebrew.
+## Features
 
-## Homebrew Tap
+- **Hotkey-driven** — hold any combination of ⌃ ⌥ ⌘ ⇧ and drag to reposition any window
+- **Menu bar native** — lives quietly in the menu bar, out of your way
+- **Launch at login** — optional, toggled from the popover
+- **Auto-update** — checks GitHub Releases and prompts in-app when a new version is available
+- **Minimal permissions** — requests only the Accessibility permission it needs; nothing else
 
-The published Homebrew tap lives in the separate public `ihsur7/homebrew-grabber` repository.
+## Requirements
 
-Install with the normal tap flow:
+- macOS 13 Ventura or later
+- Accessibility permission (prompted on first launch)
+
+## Installation
+
+### Homebrew (recommended)
 
 ```bash
 brew tap ihsur7/grabber
 brew install --cask grabber
 ```
 
-This repo only keeps the tap template in [homebrew/grabber.rb.template](homebrew/grabber.rb.template). The Xcode Cloud release script renders that template and pushes the real cask into the tap repo automatically.
+### Manual
 
-## Release Packaging
+Download the latest `grabber-<version>.zip` from [Releases](https://github.com/ihsur7/grabber/releases), unzip, and move `Grabber.app` to your Applications folder.
 
-This repository is set up to produce a Homebrew-friendly release zip from the Xcode project.
+> **Note:** Grabber requires Accessibility permission to move other app windows. Grant it from **System Settings → Privacy & Security → Accessibility** when prompted on first launch.
 
-### Build a release zip locally
+## Usage
+
+1. Launch Grabber and click **Grant** in the menu bar popover if prompted for Accessibility permission.
+2. Hold your configured modifier key (default: ⌥) and drag anywhere on any window to move it.
+3. Customize the modifier key combination from the menu bar popover.
+
+## Development
+
+### Build locally
+
+Open `grabber.xcodeproj` in Xcode and run the `grabber` scheme, or build a release zip from the command line:
 
 ```bash
 ./scripts/package_release.sh <version>
 ```
 
-The script builds the `grabber` scheme in Release mode, overrides the app's release version from the version argument you pass in, packages `Grabber.app` into a zip, writes a matching SHA-256 file next to it, and renders a tap-ready cask file at `build/release/grabber.rb` from [homebrew/grabber.rb.template](homebrew/grabber.rb.template). It can also package an already-exported app bundle, which is how Xcode Cloud reuses the same logic after an archive build.
+This builds the `grabber` scheme in Release configuration, packages `Grabber.app` into a zip, writes a matching SHA-256 file, and renders a tap-ready cask at `build/release/grabber.rb` from [`homebrew/grabber.rb.template`](homebrew/grabber.rb.template).
 
-To build a signed and notarized release locally, export the same signing inputs your Xcode Cloud archive uses and then run:
+To produce a signed and notarized build locally:
 
 ```bash
 SIGN_RELEASE=1 \
@@ -45,47 +66,45 @@ NOTARYTOOL_KEY_PATH="$HOME/private_keys/AuthKey_XXXX.p8" \
 ./scripts/package_release.sh <version>
 ```
 
-### Xcode Cloud release workflow
+Use the local script to validate release output before cutting a tag. Use Xcode Cloud for the signed publish and Homebrew tap update.
 
-This repository now publishes signed macOS releases from Xcode Cloud. The custom post-build script at [ci_scripts/ci_post_xcodebuild.sh](ci_scripts/ci_post_xcodebuild.sh) runs after a successful macOS archive action, packages the archived `Grabber.app` when it is present, falls back to `xcodebuild -exportArchive` only when needed, uploads `grabber-<version>.zip` and `grabber-<version>.zip.sha256` to the matching GitHub Release, updates the `ihsur7/homebrew-grabber` tap, and prunes older GitHub releases and matching tags so only the newest 3 remain by default.
+## Release workflow
 
-Configure your Xcode Cloud workflow with:
+Releases are published automatically from Xcode Cloud when a `v*` tag is pushed. The post-build script at [`ci_scripts/ci_post_xcodebuild.sh`](ci_scripts/ci_post_xcodebuild.sh):
 
-1. A macOS `Archive` action. Xcode Cloud may expose only `None`, `TestFlight (Internal Testing Only)`, and `App Store Connect` here for macOS.
-2. The app target's `Release` signing configuration set to `Developer ID` in Xcode, so the `.xcarchive` already contains a Developer ID signed app that the post-build script can package without requiring a second export step.
-3. A tag-based start condition for `v*` if you want tagging to trigger publishing automatically.
-4. Secret environment variable `GITHUB_RELEASE_TOKEN`: GitHub token with `contents:write` access to `ihsur7/grabber`.
-5. Secret environment variable `HOMEBREW_TAP_GITHUB_TOKEN`: GitHub token with `contents:write` access to `ihsur7/homebrew-grabber`.
-6. Optional environment variable `GITHUB_RELEASE_REPO`: defaults to `ihsur7/grabber`.
-7. Optional environment variable `HOMEBREW_TAP_REPO`: defaults to `ihsur7/homebrew-grabber`.
-8. Optional environment variable `PUBLISH_RELEASE=1`: required for manual archive runs that are not started from a tag.
-9. Optional environment variable `RELEASE_VERSION=<version>`: required for manual archive runs that are not started from a `v<version>` tag.
-10. Optional environment variable `RELEASE_RETENTION_COUNT=<count>`: defaults to `3` and controls how many GitHub releases and matching tags are retained after each successful publish.
+- Packages the Developer ID–signed `Grabber.app` from the Xcode Cloud archive
+- Uploads `grabber-<version>.zip` and its SHA-256 to the GitHub Release
+- Pushes the rendered cask to [`ihsur7/homebrew-grabber`](https://github.com/ihsur7/homebrew-grabber)
+- Retains only the newest 3 releases and their tags (configurable via `RELEASE_RETENTION_COUNT`)
 
-For tagged archive builds, the script derives the release version from the tag automatically. For manual archive builds, set both `PUBLISH_RELEASE=1` and `RELEASE_VERSION=<version>` in the workflow environment.
+### Xcode Cloud setup
 
-### Local preflight vs Xcode Cloud publish
+Configure the workflow with:
 
-Use the local packaging script when you want to validate the release output before cutting a tag. Use Xcode Cloud when you want the signed release published and the Homebrew tap updated.
+1. A macOS **Archive** action with the app target's Release signing set to **Developer ID** — the archive must contain a Developer ID signed app so the post-build script can package it directly.
+2. A tag-based start condition matching `v*`.
 
-If you still need to create a Developer ID certificate for local packaging, you can export it from Keychain Access as `.p12` and encode it with:
-
-```bash
-base64 -i developer-id-application.p12 | pbcopy
-```
+| Variable | Required | Description |
+|---|---|---|
+| `GITHUB_RELEASE_TOKEN` | Yes | GitHub token with `contents:write` on `ihsur7/grabber` |
+| `HOMEBREW_TAP_GITHUB_TOKEN` | Yes | GitHub token with `contents:write` on `ihsur7/homebrew-grabber` |
+| `PUBLISH_RELEASE` | Manual runs | Set to `1` for archive runs not triggered by a tag |
+| `RELEASE_VERSION` | Manual runs | Version string for archive runs not triggered by a `v<version>` tag |
+| `GITHUB_RELEASE_REPO` | No | Defaults to `ihsur7/grabber` |
+| `HOMEBREW_TAP_REPO` | No | Defaults to `ihsur7/homebrew-grabber` |
+| `RELEASE_RETENTION_COUNT` | No | Releases to keep after publish (default: `3`) |
 
 ### Release checklist
 
-1. Build locally with `./scripts/package_release.sh <version>` if you want a preflight check.
-2. Tag the release as `v<version>` and push it so the Xcode Cloud archive workflow runs.
-3. Confirm the Xcode Cloud build produced a Developer ID signed app in the archive and completed the post-build publish step.
-4. Confirm the GitHub Release contains `grabber-<version>.zip` and `grabber-<version>.zip.sha256`.
-5. Confirm the workflow pushed the updated cask to your `homebrew-grabber` tap repo.
+1. Run `./scripts/package_release.sh <version>` locally for a preflight check.
+2. Tag the release as `v<version>` and push — Xcode Cloud handles signing, packaging, and publishing.
+3. Confirm the GitHub Release contains `grabber-<version>.zip` and `grabber-<version>.zip.sha256`.
+4. Confirm the Homebrew tap is updated in [`ihsur7/homebrew-grabber`](https://github.com/ihsur7/homebrew-grabber).
 
-### Notes for Homebrew users
+## Homebrew tap
 
-Grabber requires Accessibility permission to grab and move other app windows. Homebrew can install the app bundle, but the first launch still needs that system permission to be granted.
+The published cask lives in the separate [`ihsur7/homebrew-grabber`](https://github.com/ihsur7/homebrew-grabber) repository. This repo keeps only the template at [`homebrew/grabber.rb.template`](homebrew/grabber.rb.template); the CI script renders and pushes the real cask on each release.
 
-## Notes for maintainers
+## License
 
-GitHub Actions no longer builds or publishes the app in this repository. Local packaging still works unsigned unless you explicitly set `SIGN_RELEASE=1` or `NOTARIZE_RELEASE=1`, and signed release publishing now depends on the Xcode Cloud archive workflow being configured correctly.
+[Apache License 2.0](LICENSE)
