@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D820C8362F7613BF00F2E027"
-               BuildableName = "grabber.app"
+               BuildableName = "Grabber.app"
                BlueprintName = "grabber"
                ReferencedContainer = "container:grabber.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D820C8362F7613BF00F2E027"
-            BuildableName = "grabber.app"
+            BuildableName = "Grabber.app"
             BlueprintName = "grabber"
             ReferencedContainer = "container:grabber.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D820C8362F7613BF00F2E027"
-            BuildableName = "grabber.app"
+            BuildableName = "Grabber.app"
             BlueprintName = "grabber"
             ReferencedContainer = "container:grabber.xcodeproj">
          </BuildableReference>

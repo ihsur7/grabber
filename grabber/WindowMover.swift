@@ -42,11 +42,26 @@ class WindowMover: ObservableObject {
     }
 
     func requestAccessibility() {
+        NSApp.activate(ignoringOtherApps: true)
         let options = [(kAXTrustedCheckOptionPrompt.takeRetainedValue() as String): true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
+        let isTrusted = AXIsProcessTrustedWithOptions(options)
+
+        if !isTrusted {
+            openAccessibilitySettings()
+        }
         // Re-check after a short delay so the published property updates in the UI
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.checkAccessibility()
+        }
+    }
+
+    private func openAccessibilitySettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else {
+            return
+        }
+
+        if NSWorkspace.shared.open(url) {
+            return
         }
     }
 
@@ -140,8 +155,7 @@ class WindowMover: ObservableObject {
 
     // MARK: - Coordinate helpers
 
-    /// NSEvent.mouseLocation is Cocoa coords (origin at bottom-left of primary screen, y up).
-    /// The AX API uses Quartz coords (origin at top-left of primary screen, y down).
+    /// Convert Cocoa screen coordinates into the Quartz coordinate space used by AX.
     private func currentCursorInQuartz() -> CGPoint {
         let p = NSEvent.mouseLocation
         let h = NSScreen.screens.first?.frame.height ?? 0

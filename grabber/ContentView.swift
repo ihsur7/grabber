@@ -35,6 +35,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            GrabberSettingsSections(showAdvancedOptions: false)
 
             // ── Header ──────────────────────────────────────────────
             HStack(spacing: 8) {
@@ -98,12 +99,18 @@ struct ContentView: View {
 //                        .frame(maxWidth: .infinity, alignment: .leading)
 //                        .fixedSize(horizontal: false, vertical: true)
                 }
-                else if hotkeyStore.modifiers.intersection([.control, .option, .command, .shift]).rawValue.nonzeroBitCount == 1 {
-                    Text("Two or more modifiers recommended.")
-                        .font(.footnote)
-                        .foregroundStyle(.orange)
+                .simultaneousGesture(TapGesture().onEnded {
+                    closePopover()
+                    NSApp.activate(ignoringOtherApps: true)
+                })
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("v\(version)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
-            }
 
             Toggle("Show icon in Dock", isOn: $appVisibilityStore.showsDockIcon)
 

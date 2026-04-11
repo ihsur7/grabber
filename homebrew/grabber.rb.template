@@ -1,5 +1,5 @@
 cask "grabber" do
-  version "1.0.0"
+  version "REPLACE_WITH_RELEASE_VERSION"
   sha256 "REPLACE_WITH_RELEASE_SHA256"
 
   url "https://github.com/OWNER/REPO/releases/download/v#{version}/grabber-#{version}.zip"
@@ -7,9 +7,9 @@ cask "grabber" do
   desc "Menu bar utility for moving windows by holding a modifier key"
   homepage "https://github.com/OWNER/REPO"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: ">= :sonoma"
 
-  app "grabber.app", target: "Grabber.app"
+  app "Grabber.app"
 
   livecheck do
     url :homepage
