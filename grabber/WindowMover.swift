@@ -15,6 +15,7 @@ class WindowMover: ObservableObject {
 
     private var flagsMonitor: Any?
     private var mouseMoveMonitor: Any?
+    private var accessibilityPollTimer: Timer?
     private var isHotkeyDown = false
     private var grabbedWindow: AXUIElement?
     private var grabOffset = CGPoint.zero
@@ -36,7 +37,9 @@ class WindowMover: ObservableObject {
 
     func checkAccessibility() {
         accessibilityGranted = AXIsProcessTrusted()
-        if !accessibilityGranted {
+        if accessibilityGranted {
+            stopAccessibilityPolling()
+        } else {
             resetHotkeyState()
         }
     }
@@ -48,6 +51,19 @@ class WindowMover: ObservableObject {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
+        startAccessibilityPolling()
+    }
+
+    private func startAccessibilityPolling() {
+        guard accessibilityPollTimer == nil else { return }
+        accessibilityPollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.checkAccessibility()
+        }
+    }
+
+    private func stopAccessibilityPolling() {
+        accessibilityPollTimer?.invalidate()
+        accessibilityPollTimer = nil
     }
 
     // MARK: - Hotkey monitoring
