@@ -14,6 +14,10 @@ final class AppVisibilityStore: ObservableObject {
     }
 
     private init() {
-        showsDockIcon = UserDefaults.standard.bool(forKey: Self.showsDockIconKey)
+        if let storedValue = UserDefaults.standard.object(forKey: Self.showsDockIconKey) as? Bool {
+            showsDockIcon = storedValue
+        } else {
+            showsDockIcon = false
+        }
     }
 }

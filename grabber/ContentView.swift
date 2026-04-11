@@ -10,6 +10,7 @@ import AppKit
 
 struct ContentView: View {
     @EnvironmentObject var appVisibilityStore: AppVisibilityStore
+    @EnvironmentObject var launchAtLoginStore: LaunchAtLoginStore
     @EnvironmentObject var windowMover: WindowMover
     @ObservedObject var hotkeyStore = HotkeyStore.shared
     let onOpenAbout: () -> Void
@@ -106,6 +107,21 @@ struct ContentView: View {
             }
 
             Toggle("Show icon in Dock", isOn: $appVisibilityStore.showsDockIcon)
+
+            Toggle(
+                "Start Grabber on login",
+                isOn: Binding(
+                    get: { launchAtLoginStore.launchesAtLogin },
+                    set: { launchAtLoginStore.setLaunchAtLogin($0) }
+                )
+            )
+            .disabled(!launchAtLoginStore.isSupported)
+
+            if launchAtLoginStore.approvalRequired {
+                Text("Approve Grabber in System Settings > General > Login Items if macOS asks.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
 
             // ── Quit ─────────────────────────────────────────────────
             HStack {

@@ -7,6 +7,7 @@ import Cocoa
 import Combine
 import SwiftUI
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private static let openHandAssetName = "openhand-symbol"
     private static let closedHandAssetName = "closehand-symbol"
@@ -17,13 +18,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
     let windowMover = WindowMover()
     let appVisibilityStore = AppVisibilityStore.shared
+    let launchAtLoginStore = LaunchAtLoginStore.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         applyActivationPolicy(showDockIcon: appVisibilityStore.showsDockIcon)
+        launchAtLoginStore.configureDefaultIfNeeded()
 
         setupStatusItem()
         setupPopover()
-        observeVisibilityChanges()
+        observeStateChanges()
         windowMover.startMonitoring()
     }
 
@@ -41,18 +44,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 260)
+        popover.contentSize = NSSize(width: 280, height: 300)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
             rootView: ContentView(onOpenAbout: { [weak self] in
                 self?.showAboutWindow()
             })
                 .environmentObject(appVisibilityStore)
+                .environmentObject(launchAtLoginStore)
                 .environmentObject(windowMover)
         )
     }
 
-    private func observeVisibilityChanges() {
+    private func observeStateChanges() {
         appVisibilityStore.$showsDockIcon
             .removeDuplicates()
             .dropFirst()
@@ -65,6 +69,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .removeDuplicates()
             .sink { [weak self] isHotkeyActive in
                 self?.updateStatusItemIcon(isHotkeyActive: isHotkeyActive)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                self?.launchAtLoginStore.refresh()
             }
             .store(in: &cancellables)
     }
