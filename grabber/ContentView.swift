@@ -30,6 +30,7 @@ struct ContentView: View {
                 }
                 .simultaneousGesture(TapGesture().onEnded {
                     closePopover()
+                    NSApp.activate(ignoringOtherApps: true)
                 })
                 .font(.caption)
                 .foregroundStyle(.secondary)
