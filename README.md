@@ -1,10 +1,17 @@
-# Grabber
+<p align="center">
+  <img src="grabber/Assets.xcassets/iconlight.imageset/GIcon-iOS-Default-1024x1024@1x.png" width="128" alt="Grabber">
+</p>
 
-[![Release](https://img.shields.io/github/v/release/ihsur7/grabber?display_name=tag&label=release)](https://github.com/ihsur7/grabber/releases)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey)](#requirements)
+<h1 align="center">Grabber</h1>
 
-Move any window from anywhere — hold a hotkey and drag.
+<p align="center">
+  <a href="https://github.com/ihsur7/grabber/releases"><img src="https://img.shields.io/github/v/release/ihsur7/grabber?display_name=tag&label=release" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey" alt="Platform">
+  <a href="https://www.buymeacoffee.com/ihsur7"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
+</p>
+
+<p align="center">Move any window from anywhere — hold a hotkey and drag.</p>
 
 Grabber is a lightweight macOS menu bar utility that lets you move any window by holding a modifier key and dragging anywhere on its surface. No titlebar required.
 
