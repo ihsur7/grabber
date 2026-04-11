@@ -96,8 +96,13 @@ struct ContentView: View {
                             hotkeyStore.modifiers = mods
                         }
                         .buttonStyle(.bordered)
-                        .tint(isOn ? .primary : .secondary)
+                        .tint(.primary)
+                        .opacity(isOn ? 1 : 0.5)
                         .font(.system(size: 16, weight: .medium, design: .monospaced))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Color.accentColor, lineWidth: isOn ? 2 : 0)
+                        )
                     }
                     Spacer()
                 }
