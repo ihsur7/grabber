@@ -41,6 +41,7 @@ struct AboutView: View {
             HStack {
                 // ── Check for Updates ────────────────────────────────
                 checkForUpdatesButton
+                updateStatus
 
                 Spacer()
                 Button("Close") {
@@ -57,18 +58,10 @@ struct AboutView: View {
     @ViewBuilder
     private var checkForUpdatesButton: some View {
         switch updateChecker.state {
-        case .idle:
+        case .idle, .upToDate:
             Button("Check for Updates") {
                 updateChecker.checkInBackground()
             }
-        case .upToDate:
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Text("Up to Date")
-                    .foregroundStyle(.secondary)
-            }
-            .font(.subheadline)
         case .error:
             Button {
                 updateChecker.checkInBackground()
@@ -91,6 +84,22 @@ struct AboutView: View {
             Button("Installing…") {
                 onUpdate()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatus: some View {
+        switch updateChecker.state {
+        case .upToDate:
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("Up to Date")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+        default:
+            EmptyView()
         }
     }
 

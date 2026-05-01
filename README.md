@@ -30,11 +30,12 @@ Grabber is a lightweight macOS menu bar utility that lets you move any window by
 
 ## Installation
 
-### Homebrew (recommended)
+### Homebrew cask (recommended)
+
+The release cask is published to [`ihsur7/homebrew-grabber`](https://github.com/ihsur7/homebrew-grabber). Homebrew can tap it automatically from the fully qualified cask name:
 
 ```bash
-brew tap ihsur7/grabber
-brew install --cask grabber
+brew install --cask ihsur7/grabber/grabber
 ```
 
 ### Manual
